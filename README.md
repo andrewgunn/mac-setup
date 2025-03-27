@@ -50,6 +50,9 @@
 1. Install Oh My Zsh `sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"`
 1. Install Powerlevel10k `git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k"`
 1. Open the `~./zshrc` file using Zed
-1. Change the theme to `powerlevel10k/powerlevel10k`
+1. Change `ZSH_THEME` to `powerlevel10k/powerlevel10k`
 1. Open iTerm
 1. Configure Powerlevel10k
+1. Configure zsh-syntax-highlighting  `echo "source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" >> ${ZDOTDIR:-$HOME}/.zshrc` 
+3. Restart iTerm
+4. 
