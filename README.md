@@ -121,6 +121,8 @@ killall Finder;
 1. Choose a Python version (e.g. `3.13.0`)
 1. Install Python `pyenv install <version>`
 
+https://medium.com/marvelous-mlops/the-rightway-to-install-python-on-a-mac-f3146d9d9a32
+
 ## Code
 
 1. Open iTerm
