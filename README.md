@@ -55,4 +55,7 @@
 1. Configure Powerlevel10k
 1. Configure zsh-syntax-highlighting  `echo "source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" >> ${ZDOTDIR:-$HOME}/.zshrc` 
 3. Restart iTerm
-4. 
+
+## .NET MAUI
+
+1. https://khalidabuhakmeh.com/dotnet-maui-development-environment-set-up-walkthrough
