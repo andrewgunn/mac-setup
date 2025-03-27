@@ -81,7 +81,13 @@ killall Finder;
 1. Open iTerm
 1. Configure Powerlevel10k
 1. Configure zsh-syntax-highlighting  `echo "source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" >> ${ZDOTDIR:-$HOME}/.zshrc` 
-3. Restart iTerm
+1. Close iTerm
+1. Configure Pyenv (add to the bottom of `.zshrc`)
+    ```
+    eval "$(pyenv init -)"
+    if which pyenv-virtualenv-init > /dev/null; then eval "$(pyenv virtualenv-init -)"; fi
+    ```
+1. Open iTerm
 
 ## Git
 
