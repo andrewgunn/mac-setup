@@ -130,4 +130,4 @@ https://medium.com/marvelous-mlops/the-rightway-to-install-python-on-a-mac-f3146
 
 ## .NET MAUI
 
-1. https://khalidabuhakmeh.com/dotnet-maui-development-environment-set-up-walkthrough
+https://khalidabuhakmeh.com/dotnet-maui-development-environment-set-up-walkthrough
