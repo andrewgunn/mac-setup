@@ -132,6 +132,8 @@ TODO
 
 TODO
 
+https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter
+
 ## Code
 
 1. Open iTerm
