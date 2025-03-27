@@ -7,15 +7,24 @@
 1. Update brew `brew update`
 1. Upgrade brew `brew update`
 1. Download the contents of `Brewfile` from this repository
-1. Change directory to Downloads `cd Downloads`
+1. Change directory `cd Downloads`
 1. Install the bundle `brew bundle install`
+
+## Finder
+
+1. Open iTerm
+1. Show Library folder `chflags nohidden ~/Library`
+1. Show hidden files `defaults write com.apple.finder AppleShowAllFiles YES`
+1. Show path bar `defaults write com.apple.finder ShowPathbar -bool true`
+1. Show status bar `defaults write com.apple.finder ShowStatusBar -bool true`
+
+killall Finder;
 
 ## Rectangle
 
 1. Open Rectangle
 1. Disable all shortcuts
 1. Set the following shortcuts:
-
     1. Left Half `^⌥←`
     2. Right Half `^⌥→`
     2. Centre Half `^⌥↓`
@@ -36,13 +45,32 @@
 
 1. Open iTerm
 1. Go to settings `iTerm > Settings...`
-1. Disable `General > Closing > Confirm closing multiple sessions`
-1. Disable `General > Closing > Confirm "Quit iTerm2 (⌘Q)"`
-1. Change the font to Fira Code `Profiles > Text > Font`
-1. Change the font weight to Retina `Profiles > Text > Font`
-1. Change the font size to 18 `Profiles > Text > Font`
-1. Enable `Profiles > Text > Font > Use ligatures`
-1. Load natural text editing key mappings `Profiles > Keys > Key Mappings > Presets... > Natural Text Editing`
+1. Go to General
+    1. Go to Closing
+        1. Disable `Confirm closing multiple sessions`
+        1. Disable `Confirm "Quit iTerm2 (⌘Q)"`
+    1. Go to Window
+        2. Disable `Native full screen windows`
+1. Go to Appearance
+    1. Go Tabs
+        1. Disable `Show tab bar in fullscreen`
+    1. Go to Dimming
+        1. Disable all 
+1. Go to Profiles
+    1. Go to General
+        1. Set split plane directory to current directory `Working Directory > Advanced Configuration > Edit > Working Directory for New Split Panes > Reuse previous session's directory`
+    1. Go to Text
+        1. Change the font to Fira Code `Font`
+        1. Change the font weight to Retina `Font`
+        1. Change the font size to 18 `Font`
+        1. Enable ligatures `Font > Use ligatures`
+    1. Go to Window
+        1. Set transparency to 30 `Window Appearance > Transparency`
+        2. Set style `Settings for New Windows > Full Screen > Full Screeb`
+        3. Set screen to `Settings for New Windows > Screen > Main Screen`
+    1. Go to Keys
+        1. Go to Key Mappings
+            1. Load natural text editing key mappings `Presets... > Natural Text Editing`
 
 ## Oh My Zsh
 
@@ -55,6 +83,31 @@
 1. Configure Powerlevel10k
 1. Configure zsh-syntax-highlighting  `echo "source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" >> ${ZDOTDIR:-$HOME}/.zshrc` 
 3. Restart iTerm
+
+## Git
+
+1. Open iTerm
+1. Set commiter name `git config --global user.name "Andrew Gunn"`
+1. Set committer email address `git config --global user.email "hello@andrewgunn.co.uk"`
+1. Set default branch `git config --global init.defaultBranch main`
+1. Set improved log `git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"`
+
+## SSH
+
+1. Open iTerm
+1. Create SSH directory `mkdir ~/.ssh`
+1. Change directory `cd ~/.ssh`
+1. Generate SSH key (use `github` as the file) `ssh-keygen -t ed25519 -C "github"`
+1. Create SSH configuration file `touch ~/.ssh/config`
+1. Update the SSH configuration file:
+    ```
+    Host *
+      AddKeysToAgent yes
+      UseKeychain yes
+      IdentityFile ~/.ssh/github
+    ```
+1. Add SSH key to Keychain `ssh-add --apple-use-keychain ~/.ssh/github`
+1. Add publick key to GitHub `gh auth login`
 
 ## .NET MAUI
 
