@@ -3,12 +3,14 @@ cask_args appdir: '/Applications'
 
 # CLIs
 brew 'git'
+brew 'gh'
 brew 'lazydocker'
 brew 'lazygit'
 brew 'mongodb-atlas-cli'
 brew 'ollama'
 brew 'pyenv'
 brew 'pyenv-virtualenv'
+brew 'zsh-syntax-highlighting'
 
 # GUIs
 cask '1password'
@@ -16,6 +18,7 @@ cask 'alt-tab'
 cask 'appcleaner'
 cask 'basecamp'
 cask 'docker'
+cask 'dotnet'
 cask 'elgato-control-center'
 cask 'font-fira-code'
 cask 'google-chrome'
