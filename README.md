@@ -65,7 +65,6 @@ killall Finder;
         1. Change the font size to 18 `Font`
         1. Enable ligatures `Font > Use ligatures`
     1. Go to Window
-        1. Set transparency to 30 `Window Appearance > Transparency`
         2. Set style `Settings for New Windows > Full Screen > Full Screeb`
         3. Set screen to `Settings for New Windows > Screen > Main Screen`
     1. Go to Keys
