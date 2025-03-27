@@ -17,8 +17,9 @@
 1. Show hidden files `defaults write com.apple.finder AppleShowAllFiles YES`
 1. Show path bar `defaults write com.apple.finder ShowPathbar -bool true`
 1. Show status bar `defaults write com.apple.finder ShowStatusBar -bool true`
+1. Close all Finder wondows `killall Finder;`
 
-killall Finder;
+TODO
 
 ## Rectangle
 
@@ -122,6 +123,14 @@ killall Finder;
 1. Install Python `pyenv install <version>`
 
 https://medium.com/marvelous-mlops/the-rightway-to-install-python-on-a-mac-f3146d9d9a32
+
+## Rider
+
+TODO
+
+## Visual Studio Code
+
+TODO
 
 ## Code
 
