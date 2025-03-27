@@ -7,7 +7,7 @@
 1. Update brew `brew update`
 1. Upgrade brew `brew update`
 1. Download the contents of `Brewfile` from this repository
-1. Change directory `cd Downloads`
+1. Change directory `cd ~/Downloads`
 1. Install the bundle `brew bundle install`
 
 ## Finder
@@ -113,6 +113,18 @@ killall Finder;
     ```
 1. Add SSH key to Keychain `ssh-add --apple-use-keychain ~/.ssh/github`
 1. Add publick key to GitHub `gh auth login`
+
+## Pyton
+
+1. Open iTerm
+1. List Python version `pyenv install -l`
+1. Choose a Python version (e.g. `3.13.0`)
+1. Install Python `pyenv install <version>`
+
+## Code
+
+1. Open iTerm
+1. Make the directory `mkdir ~/code`
 
 ## .NET MAUI
 
