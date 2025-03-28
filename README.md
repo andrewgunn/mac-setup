@@ -37,6 +37,11 @@ https://www.robinwieruch.de/mac-setup-web-development/
     2. Last Third `^⌥3`
     2. Maximuse `^⌥↑`
     2. Centre `^⌥↩`
+  
+## SmoothScroll
+
+1. Open SmoothScroll
+1. Enable `Reverse Wheel Direction`
 
 ## Terminal
 
