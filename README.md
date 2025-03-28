@@ -1,14 +1,17 @@
 # Mac Setup
 
-## Terminal
+## 1Password
 
-1. Open Terminal
-1. Install Homebrew `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
-1. Update brew `brew update`
-1. Upgrade brew `brew update`
-1. Download the contents of `Brewfile` from this repository
-1. Change directory `cd ~/Downloads`
-1. Install the bundle `brew bundle install`
+1. Open 1Password
+1. Go to settings `1Password > Settings...`
+1. Disable the `Show 1Password` shortcut
+1. Change the `Show Quick Access` shortcut to ⇧⌘P
+
+## AltTab
+
+1. Open AltTab
+1. Go to Controls
+    1. Change keyboard shortcut to select previous window to ⇧⇥ `Shortcuts when active... > Select previous window`
 
 ## Finder
 
@@ -19,7 +22,7 @@
 1. Show status bar `defaults write com.apple.finder ShowStatusBar -bool true`
 1. Close all Finder wondows `killall Finder;`
 
-TODO
+https://www.robinwieruch.de/mac-setup-web-development/
 
 ## Rectangle
 
@@ -35,12 +38,15 @@ TODO
     2. Maximuse `^⌥↑`
     2. Centre `^⌥↩`
 
-## 1Password
+## Terminal
 
-1. Open 1Password
-1. Go to settings `1Password > Settings...`
-1. Disable the `Show 1Password` shortcut
-1. Change the `Show Quick Access` shortcut to ⇧⌘P
+1. Open Terminal
+1. Install Homebrew `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+1. Update brew `brew update`
+1. Upgrade brew `brew update`
+1. Download the contents of `Brewfile` from this repository
+1. Change directory `cd ~/Downloads`
+1. Install the bundle `brew bundle install`
 
 ## iTerm
 
@@ -115,6 +121,11 @@ TODO
 1. Add SSH key to Keychain `ssh-add --apple-use-keychain ~/.ssh/github`
 1. Add publick key to GitHub `gh auth login`
 
+## Code
+
+1. Open iTerm
+1. Make the directory `mkdir ~/code`
+
 ## Pyton
 
 1. Open iTerm
@@ -133,11 +144,6 @@ TODO
 TODO
 
 https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter
-
-## Code
-
-1. Open iTerm
-1. Make the directory `mkdir ~/code`
 
 ## .NET MAUI
 
