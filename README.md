@@ -4,12 +4,16 @@
 
 1. Open 1Password
 1. Go to settings `1Password > Settings...`
-1. Disable the `Show 1Password` shortcut
-1. Change the `Show Quick Access` shortcut to ⇧⌘P
+1. Go to General
+    1. Disable `Keep 1Password in the menu bar`
+    1. Disable the `Show 1Password` shortcut
+    1. Change the `Show Quick Access` shortcut to ⇧⌘P
 
 ## AltTab
 
 1. Open AltTab
+1. Go to General
+    1. Disable `Menubar icon`
 1. Go to Controls
     1. Change keyboard shortcut to select previous window to ⇧⇥ `Shortcuts when active... > Select previous window`
 
@@ -27,21 +31,33 @@ https://www.robinwieruch.de/mac-setup-web-development/
 ## Rectangle
 
 1. Open Rectangle
-1. Disable all shortcuts
-1. Set the following shortcuts:
-    1. Left Half `^⌥←`
-    2. Right Half `^⌥→`
-    2. Centre Half `^⌥↓`
-    2. First Third `^⌥1`
-    2. Centre Third `^⌥2`
-    2. Last Third `^⌥3`
-    2. Maximuse `^⌥↑`
-    2. Centre `^⌥↩`
+1. Go to shortcuts
+    1. Disable all shortcuts
+    1. Set the following shortcuts:
+        1. Left Half `^⌥←`
+        1. Right Half `^⌥→`
+        1. Centre Half `^⌥↓`
+        1. First Third `^⌥1`
+        1. Centre Third `^⌥2`
+        1. Last Third `^⌥3`
+        1. Maximuse `^⌥↑`
+        1. Centre `^⌥↩`
+1. Go to settings
+    1.  Enable `Launch on login`
+    1.  Enable `Hide menu bar icon`
   
 ## SmoothScroll
 
 1. Open SmoothScroll
+1. Disable `Show menu bar icon`
 1. Enable `Reverse Wheel Direction`
+
+## Stats
+
+1. Open Stats
+1. Go to Battery
+    1. Disable
+
 
 ## Terminal
 
@@ -62,7 +78,7 @@ https://www.robinwieruch.de/mac-setup-web-development/
         1. Disable `Confirm closing multiple sessions`
         1. Disable `Confirm "Quit iTerm2 (⌘Q)"`
     1. Go to Window
-        2. Disable `Native full screen windows`
+        1. Disable `Native full screen windows`
 1. Go to Appearance
     1. Go Tabs
         1. Disable `Show tab bar in fullscreen`
@@ -77,8 +93,8 @@ https://www.robinwieruch.de/mac-setup-web-development/
         1. Change the font size to 18 `Font`
         1. Enable ligatures `Font > Use ligatures`
     1. Go to Window
-        2. Set style `Settings for New Windows > Full Screen > Full Screeb`
-        3. Set screen to `Settings for New Windows > Screen > Main Screen`
+        1. Set style `Settings for New Windows > Full Screen > Full Screeb`
+        1. Set screen to `Settings for New Windows > Screen > Main Screen`
     1. Go to Keys
         1. Go to Key Mappings
             1. Load natural text editing key mappings `Presets... > Natural Text Editing`
