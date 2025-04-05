@@ -1,5 +1,16 @@
 # Mac Setup
 
+## Start
+
+1. Open Terminal
+1. Show/hide the dock instantly `defaults write com.apple.dock autohide-time-modifier -int 0; killall Dock`
+1. Install Homebrew `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+1. Update brew `brew update`
+1. Upgrade brew `brew update`
+1. Download the contents of `Brewfile` from this repository
+1. Change directory `cd ~/Downloads`
+1. Install the bundle `
+
 ## 1Password
 
 1. Open 1Password
@@ -56,18 +67,7 @@ https://www.robinwieruch.de/mac-setup-web-development/
 
 1. Open Stats
 1. Go to Battery
-    1. Disable
-
-
-## Terminal
-
-1. Open Terminal
-1. Install Homebrew `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
-1. Update brew `brew update`
-1. Upgrade brew `brew update`
-1. Download the contents of `Brewfile` from this repository
-1. Change directory `cd ~/Downloads`
-1. Install the bundle `brew bundle install`
+    1. Disablebrew bundle install`
 
 ## iTerm
 
