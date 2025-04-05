@@ -10,6 +10,7 @@ brew 'mongodb-atlas-cli'
 brew 'ollama'
 brew 'pyenv'
 brew 'pyenv-virtualenv'
+brew 'ta-lib'
 brew 'zsh-syntax-highlighting'
 
 # GUIs
