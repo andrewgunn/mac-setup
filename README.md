@@ -1,9 +1,15 @@
 # Mac Setup
 
-## Start
+## OS
 
 1. Open Terminal
 1. Show/hide the dock instantly `defaults write com.apple.dock autohide-time-modifier -int 0; killall Dock`
+1. Open System Settings
+2. Go to Accessibility
+3. Increase the pointer size
+
+## Homebrew
+
 1. Install Homebrew `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 1. Update brew `brew update`
 1. Upgrade brew `brew update`
@@ -145,7 +151,7 @@ https://www.robinwieruch.de/mac-setup-web-development/
 ## Code
 
 1. Open iTerm
-1. Make the directory `mkdir ~/code`
+1. Make the code directory `mkdir ~/code`
 
 ## Pyton
 
