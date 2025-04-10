@@ -99,7 +99,6 @@ https://www.robinwieruch.de/mac-setup-web-development/
         1. Change the font size to 18 `Font`
         1. Enable ligatures `Font > Use ligatures`
     1. Go to Window
-        1. Set style `Settings for New Windows > Full Screen > Full Screeb`
         1. Set screen to `Settings for New Windows > Screen > Main Screen`
     1. Go to Keys
         1. Go to Key Mappings
