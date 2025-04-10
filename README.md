@@ -103,6 +103,8 @@ https://www.robinwieruch.de/mac-setup-web-development/
     1. Go to Keys
         1. Go to Key Mappings
             1. Load natural text editing key mappings `Presets... > Natural Text Editing`
+            2. Add a new key mapping `+`
+            3. Send Hex Codes with the code `0x1B 0x08`
 
 ## Oh My Zsh
 
