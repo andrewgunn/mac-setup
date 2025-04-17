@@ -136,7 +136,7 @@ https://www.robinwieruch.de/mac-setup-web-development/
 1. Set default branch `git config --global init.defaultBranch main`
 1. Set improved log `git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"`
 
-## SSH
+## GitHub SSH
 
 1. Open iTerm
 1. Create SSH directory `mkdir ~/.ssh`
