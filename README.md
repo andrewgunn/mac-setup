@@ -154,7 +154,7 @@ https://www.robinwieruch.de/mac-setup-web-development/
 1. Open iTerm
 1. Make the code directory `mkdir ~/code`
 
-## Pyton
+## Python
 
 1. Open iTerm
 1. List Python version `pyenv install -l`
