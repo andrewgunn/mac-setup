@@ -42,6 +42,10 @@
 1. Show path bar `defaults write com.apple.finder ShowPathbar -bool true`
 1. Show status bar `defaults write com.apple.finder ShowStatusBar -bool true`
 1. Close all Finder wondows `killall Finder;`
+1. Open Finder
+1. Go to Settings `Finder > Settings...`
+1. Go to General
+1. Change `New Finder window show` to Downloads
 
 https://www.robinwieruch.de/mac-setup-web-development/
 
