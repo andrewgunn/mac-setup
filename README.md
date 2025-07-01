@@ -6,7 +6,7 @@
     1. Make the code directory `mkdir ~/code`
 1. Open Finder
     1. Navigate to $USER
-    1. Add `Code` folder to the Finder sidebar
+    1. Add `Code` directory to the Finder sidebar
 
 ## Setup most of the things (Homebrew, NPM, Git, etc)
 
