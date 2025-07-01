@@ -19,6 +19,10 @@ git config --global user.name "Andrew Gunn"
 git config --global user.email "hello@andrewgunn.co.uk"
 git config --global init.defaultBranch main
 git config --global pull.rebase false
+git config --global diff.tool bc
+git config --global difftool.bc.trustExitCode true
+git config --global merge.tool bc
+git config --global mergetool.bc.trustExitCode true
 git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
 
 # NPM
