@@ -6,10 +6,11 @@
     1. Make the code directory `mkdir ~/code`
 1. Open Finder
     1. Navigate to $USER
-    1. Add `Code` folder to the Finder sidebar
+    1. Add `Code` directory to the Finder sidebar
 
 ## Restore Homebrew / NPM
 
+1. Clone this repository to the `Code` directory
 1. Open Terminal
     1. Run `sh setup.sh`
 
