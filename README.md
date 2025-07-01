@@ -15,7 +15,7 @@
 1. Upgrade brew `brew update`
 1. Download the contents of `Brewfile` from this repository
 1. Change directory `cd ~/Downloads`
-1. Install the bundle `
+1. Install the bundle ` brew bundle`
 1. Install the Auto-Update tap `brew tap homebrew/autoupdate`
 1. Configure the Auto-Update tap `brew autoupdate start 43200 --upgrade --cleanup --immediate`
 
