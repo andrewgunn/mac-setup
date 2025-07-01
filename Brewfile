@@ -3,6 +3,7 @@ cask_args appdir: '/Applications'
 
 # CLIs
 brew 'git'
+brew 'gemini-cli'
 brew 'gh'
 brew 'lazydocker'
 brew 'lazygit'
