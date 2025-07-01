@@ -10,12 +10,12 @@
 
 ## Restore Homebrew / NPM
 
-1. Open Terminal
+1. Open a CLI
     1. Run `sh setup.sh`
 
 ## OS
 
-1. Open Terminal
+1. Open a CLI
     1. Show/hide the dock instantly `defaults write com.apple.dock autohide-time-modifier -int 0; killall Dock`
 1. Open System Settings
     1. Go to Accessibility
