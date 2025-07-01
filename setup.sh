@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Finder
 chflags nohidden ~/Library
 defaults write com.apple.finder AppleShowAllFiles YES
