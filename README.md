@@ -60,11 +60,13 @@ https://www.robinwieruch.de/mac-setup-web-development/
             1. Left Half `^⌥←`
             1. Right Half `^⌥→`
             1. Centre Half `^⌥↓`
+            1. Maximuse `^⌥↑`
+            1. Centre `^⌥↩`
             1. First Third `^⌥1`
             1. Centre Third `^⌥2`
             1. Last Third `^⌥3`
-            1. Maximuse `^⌥↑`
-            1. Centre `^⌥↩`
+            1. First Two Thirds `^⌥⇧←`
+            1. Last Two Thirds `^⌥⇧→`
     1. Go to Settings
         1.  Enable `Launch on login`
         1.  Enable `Hide menu bar icon`
