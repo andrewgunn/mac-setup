@@ -27,10 +27,10 @@ git config --global difftool.prompt false
 git config --global merge.tool bc
 git config --global mergetool.bc.trustExitCode true
 git config --global mergetool.keepBackup false
-
 git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
 
 # NPM
+npm install -g npm@latest
 npm install -g @anthropic-ai/claude-code
 
 # OhMyZsh
