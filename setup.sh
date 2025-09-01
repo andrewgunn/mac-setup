@@ -14,7 +14,7 @@ brew upgrade
 brew bundle
 brew tap homebrew/autoupdate
 brew autoupdate delete
-brew autoupdate start 43200 --upgrade --cleanup --immediate
+brew autoupdate start
 
 # Git
 git config --global user.name "Andrew Gunn"
