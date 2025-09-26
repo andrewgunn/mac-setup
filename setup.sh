@@ -17,9 +17,9 @@ brew autoupdate delete
 brew autoupdate start
 
 # Git
-printf "Enter your git user name: "
+echo "Enter your git user name:"
 read -r git_user_name
-printf "Enter your git email addres: "
+echo "Enter your git email address:"
 read -r git_email_address
 git config --global user.name "$git_user_name"
 git config --global user.email "$git_email_address"
@@ -35,7 +35,8 @@ git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Crese
 
 # .NET
 dotnet dev-certs https --trust
-dotnet new install Aspire.ProjectTemplates --force
+sudo dotnet workload update
+sudo dotnet workload install aspire
 
 # NPM
 npm install -g npm@latest
