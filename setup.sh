@@ -35,6 +35,7 @@ git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Crese
 
 # .NET
 dotnet dev-certs https --trust
+dotnet new install Aspire.ProjectTemplates --force
 
 # NPM
 npm install -g npm@latest
