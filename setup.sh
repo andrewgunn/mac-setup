@@ -35,8 +35,6 @@ git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Crese
 
 # .NET
 dotnet dev-certs https --trust
-sudo dotnet workload update
-sudo dotnet workload install aspire
 
 # NPM
 npm install -g npm@latest
