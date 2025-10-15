@@ -40,6 +40,8 @@ dotnet tool install --global dotnet-coverage
 dotnet tool install --global dotnet-ef
 dotnet tool install --global dotnet-reportgenerator-globaltool
 
+export PATH="$PATH:/Users/andrewgunn/.dotnet/tools"
+
 # NPM
 npm install -g npm@latest
 npm install -g @anthropic-ai/claude-code
