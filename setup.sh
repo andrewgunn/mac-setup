@@ -36,6 +36,7 @@ git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Crese
 # .NET
 dotnet dev-certs https --trust
 dotnet new install Aspire.ProjectTemplates --force
+dotnet tool install --global dotnet-coverage
 dotnet tool install --global dotnet-ef
 dotnet tool install --global dotnet-reportgenerator-globaltool
 
