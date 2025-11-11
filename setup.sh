@@ -38,6 +38,7 @@ dotnet dev-certs https --trust
 dotnet new install Aspire.ProjectTemplates --force
 dotnet tool install --global dotnet-ef
 dotnet tool install --global dotnet-reportgenerator-globaltool
+dotnet tool install --global Verify.Tool
 
 cat << \EOF >> ~/.zprofile
 export PATH="$PATH:/Users/andrewgunn/.dotnet/tools"

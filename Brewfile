@@ -2,6 +2,7 @@
 cask_args appdir: '/Applications'
 
 # CLIs
+brew 'azure-cli'
 brew 'docker'
 brew 'git'
 brew 'gemini-cli'
