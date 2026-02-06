@@ -12,7 +12,7 @@
 
 1. Clone this repository to the Code directory
 1. Open a CLI
-    1. Run `sh setup.sh`
+    1. Run `sh run.sh`
 
 ## OS
 
