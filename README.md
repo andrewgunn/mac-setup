@@ -3,7 +3,7 @@
 ## Code
 
 1. Open iTerm
-    1. Make the code directory `mkdir ~/code`
+    1. Make the code directory `mkdir ~/Code`
 1. Open Finder
     1. Navigate to $USER
     1. Add `Code` directory to the Finder sidebar
@@ -12,7 +12,7 @@
 
 1. Clone this repository to the Code directory
 1. Open a CLI
-    1. Run `sh run.sh`
+    1. Run `bash run.sh`
 
 ## OS
 
@@ -60,7 +60,7 @@ https://www.robinwieruch.de/mac-setup-web-development/
             1. Left Half `^⌥←`
             1. Right Half `^⌥→`
             1. Centre Half `^⌥↓`
-            1. Maximuse `^⌥↑`
+            1. Maximise `^⌥↑`
             1. Centre `^⌥↩`
             1. First Third `^⌥1`
             1. Centre Third `^⌥2`
@@ -124,11 +124,6 @@ https://www.robinwieruch.de/mac-setup-web-development/
     ```
     echo "source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" >> ${ZDOTDIR:-$HOME}/.zshrc
     ```
-    1. Configure Pyenv (add to the bottom of `.zshrc`)
-    ```
-    eval "$(pyenv init -)"
-    if which pyenv-virtualenv-init > /dev/null; then eval "$(pyenv virtualenv-init -)"; fi
-    ```
 
 ## GitHub SSH
 
@@ -145,7 +140,7 @@ https://www.robinwieruch.de/mac-setup-web-development/
         IdentityFile ~/.ssh/github
         ```
     1. Add SSH key to Keychain `ssh-add --apple-use-keychain ~/.ssh/github`
-    1. Add publick key to GitHub `gh auth login`
+    1. Add public key to GitHub `gh auth login`
 
 ## Rider
 

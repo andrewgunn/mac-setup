@@ -40,8 +40,8 @@ dotnet tool install --global dotnet-ef
 dotnet tool install --global dotnet-reportgenerator-globaltool
 dotnet tool install --global Verify.Tool
 
-cat << \EOF >> ~/.zprofile
-export PATH="$PATH:/Users/andrewgunn/.dotnet/tools"
+grep -qxF 'export PATH="$PATH:$HOME/.dotnet/tools"' ~/.zprofile 2>/dev/null || cat << \EOF >> ~/.zprofile
+export PATH="$PATH:$HOME/.dotnet/tools"
 EOF
 
 # NPM
