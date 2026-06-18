@@ -144,7 +144,14 @@ https://www.robinwieruch.de/mac-setup-web-development/
 
 ## Rider
 
-TODO
+1. Open Rider
+    1. Sign in with your JetBrains account `License` / `JetBrains Account`
+    1. Go to Settings
+        1. Go to Editor > Font
+            1. Change the font to Fira Code
+            1. Enable ligatures `Enable ligatures`
+        1. Go to Version Control > Git
+            1. Set SSH executable to `Native`
 
 ## Visual Studio Code
 

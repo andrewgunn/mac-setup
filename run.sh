@@ -36,9 +36,9 @@ git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Crese
 # .NET
 dotnet dev-certs https --trust
 dotnet new install Aspire.ProjectTemplates --force
-dotnet tool install --global dotnet-ef
-dotnet tool install --global dotnet-reportgenerator-globaltool
-dotnet tool install --global Verify.Tool
+dotnet tool update --global dotnet-ef
+dotnet tool update --global dotnet-reportgenerator-globaltool
+dotnet tool update --global Verify.Tool
 
 grep -qxF 'export PATH="$PATH:$HOME/.dotnet/tools"' ~/.zprofile 2>/dev/null || cat << \EOF >> ~/.zprofile
 export PATH="$PATH:$HOME/.dotnet/tools"
