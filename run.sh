@@ -1,4 +1,5 @@
 #!/bin/bash
+set -uo pipefail
 
 # Finder
 chflags nohidden ~/Library
@@ -9,10 +10,19 @@ killall Finder
 
 # Homebrew
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Put brew on PATH for this session (Apple Silicon, then Intel fallback)
+if [ -x /opt/homebrew/bin/brew ]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [ -x /usr/local/bin/brew ]; then
+  eval "$(/usr/local/bin/brew shellenv)"
+fi
+
 brew update
 brew upgrade
 brew bundle
 brew tap homebrew/autoupdate
+brew trust domt4/autoupdate
 brew autoupdate delete
 brew autoupdate start
 
@@ -46,9 +56,24 @@ EOF
 
 # NPM
 npm install -g npm@latest
-npm install -g @anthropic-ai/claude-code
 
-# OhMyZsh
-[ ! -d "$HOME/.oh-my-zsh" ] && sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+# Claude Code (native installer — no Node/npm, auto-updates)
+curl -fsSL https://claude.ai/install.sh | bash
+
+grep -qxF 'export PATH="$PATH:$HOME/.local/bin"' ~/.zprofile 2>/dev/null || cat << \EOF >> ~/.zprofile
+export PATH="$PATH:$HOME/.local/bin"
+EOF
+
+# OhMyZsh (unattended: don't switch shell or launch zsh mid-script)
+[ ! -d "$HOME/.oh-my-zsh" ] && RUNZSH=no CHSH=no sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 P10K_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k"
 [ ! -d "$P10K_DIR" ] && git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$P10K_DIR"
+
+# Activate the powerlevel10k theme in .zshrc
+if [ -f "$HOME/.zshrc" ]; then
+  if grep -q '^ZSH_THEME=' "$HOME/.zshrc"; then
+    sed -i '' 's|^ZSH_THEME=.*|ZSH_THEME="powerlevel10k/powerlevel10k"|' "$HOME/.zshrc"
+  else
+    echo 'ZSH_THEME="powerlevel10k/powerlevel10k"' >> "$HOME/.zshrc"
+  fi
+fi

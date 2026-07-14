@@ -3,8 +3,8 @@ cask_args appdir: '/Applications'
 
 # CLIs
 brew 'azure-cli'
-brew 'git'
 brew 'gh'
+brew 'git'
 brew 'go-task'
 brew 'hugo'
 brew 'lazydocker'
