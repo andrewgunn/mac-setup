@@ -30,6 +30,18 @@ append_once() {
   echo "    added to ${file/#$HOME/~}: $line"
 }
 
+# Append a block read from stdin unless the marker is already in the file.
+append_block_once() {
+  local file="$1" marker="$2"
+  if [ -f "$file" ] && grep -qF "$marker" "$file"; then
+    cat >/dev/null   # drain stdin so the caller's heredoc doesn't break
+    return 0
+  fi
+  printf '\n' >> "$file"
+  cat >> "$file"
+  echo "    added block to ${file/#$HOME/~}: $marker"
+}
+
 # ------------------------------------------------------------------------------
 # Finder
 # ------------------------------------------------------------------------------
@@ -91,6 +103,23 @@ brew trust domt4/autoupdate
 brew autoupdate delete
 step "brew autoupdate start" brew autoupdate start 12h \
   --upgrade --cleanup --immediate --sudo --notify-on-error
+
+# autoupdate's notifier is a background-only (LSUIElement) app whose binary is
+# executed directly rather than launched through LaunchServices, so macOS always
+# refuses its notification permission request and it never appears in System
+# Settings > Notifications. That makes failed runs completely silent. Warn at
+# login shell startup instead, which needs no permissions.
+append_block_once ~/.zprofile 'brew-autoupdate: warn when the last run failed' <<'EOF'
+# brew-autoupdate: warn when the last run failed
+if [ -n "${BASH_VERSION:-}${ZSH_VERSION:-}" ]; then
+  _bau_exit=$(launchctl list com.github.domt4.homebrew-autoupdate 2>/dev/null \
+    | awk -F'= ' '/LastExitStatus/ { gsub(/[; ]/, "", $2); print $2 }')
+  if [ -n "$_bau_exit" ] && [ "$_bau_exit" != "0" ]; then
+    printf '\033[33mbrew autoupdate: last run failed (exit %s) — run `brew autoupdate logs`\033[0m\n' "$_bau_exit"
+  fi
+  unset _bau_exit
+fi
+EOF
 
 # ------------------------------------------------------------------------------
 # Git

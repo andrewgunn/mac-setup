@@ -57,11 +57,11 @@ brew bundle dump --force --describe --file=Brewfile   # rewrite from what's inst
 brew bundle cleanup --file=Brewfile                   # list what's installed but unlisted
 ```
 
-Read the `cleanup` output before acting on it, and don't reach for
-`--force` casually — if any installed keg has stale dependency metadata (brew
-warns about a "circular dependency" when it does), cleanup mis-reads the
-dependency graph and will happily list things like `gmp` or `freetype` as
-removable. Uninstall the handful you actually want gone by name instead.
+Read the `cleanup` output before acting on it, and don't reach for `--force`
+casually. It proposes removing everything not required by the `Brewfile` —
+which includes the dependencies of anything installed manually outside it, so
+`libpng`, `freetype` and friends show up as removable. Uninstall the handful
+you actually want gone by name instead.
 
 ## OS
 
