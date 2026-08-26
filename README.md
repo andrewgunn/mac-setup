@@ -1,38 +1,74 @@
 # Mac Setup
 
-## Code
+Sets up a Mac the way I like it. `run.sh` handles everything that can be
+scripted; the rest of this file is the manual configuration that can't.
+
+## Getting started
 
 1. Open iTerm
     1. Make the code directory `mkdir ~/Code`
 1. Open Finder
     1. Navigate to $USER
     1. Add `Code` directory to the Finder sidebar
+1. Clone this repository into `~/Code`
+1. Run `./run.sh`
 
-## Setup most of the things (Homebrew, NPM, Git, etc)
+`run.sh` is safe to re-run — every step is idempotent, and it only prompts for
+your git name and email if they aren't already configured. It prints a summary
+of any failed steps at the end rather than stopping at the first one.
 
-1. Clone this repository to the Code directory
-1. Open a CLI
-    1. Run `bash run.sh`
+It installs Homebrew and everything in the `Brewfile`, configures git, installs
+the .NET tooling and Claude Code, sets up Oh My Zsh with powerlevel10k and
+zsh-syntax-highlighting, and applies the Finder / Dock / Spotlight defaults.
+
+Afterwards:
+
+1. Open a new terminal
+1. Run `p10k configure` to configure the powerlevel10k prompt
+1. Work through the manual steps below
+
+## Homebrew
+
+`run.sh` sets up [autoupdate](https://github.com/DomT4/homebrew-autoupdate) to
+upgrade formulae and casks in the background every 12 hours:
+
+```
+brew autoupdate start 12h --upgrade --cleanup --immediate --sudo --notify-on-error
+```
+
+`--upgrade` is the important flag — without it, autoupdate only refreshes
+metadata and never actually installs anything. `--sudo` opens a GUI password
+prompt for casks that need root (needs `pinentry-mac`, which is in the
+`Brewfile`).
+
+Useful commands:
+
+- `brew autoupdate status` — confirm it's running and check which flags are set
+- `brew autoupdate logs --follow` — watch a run, or find out why one failed
+- `brew outdated --cask --greedy` — casks with their own updaters (Chrome,
+  Slack, Spotify, Cursor, VS Code) update themselves and are deliberately left
+  alone. Add `--greedy` to the `start` command if you'd rather brew own them,
+  at the cost of reinstalling apps while they're running.
+
+To sync the `Brewfile` with what's actually installed:
+
+```
+brew bundle dump --force --describe --file=Brewfile   # rewrite from what's installed
+brew bundle cleanup --file=Brewfile                   # list what's installed but unlisted
+```
+
+Read the `cleanup` output before acting on it, and don't reach for
+`--force` casually — if any installed keg has stale dependency metadata (brew
+warns about a "circular dependency" when it does), cleanup mis-reads the
+dependency graph and will happily list things like `gmp` or `freetype` as
+removable. Uninstall the handful you actually want gone by name instead.
 
 ## OS
 
-1. Open a CLI
-    1. Show/hide the dock instantly `defaults write com.apple.dock autohide-time-modifier -int 0; killall Dock`
 1. Open System Settings
     1. Go to Accessibility
-        3. Increase the pointer size
-    1. Go to `Control Centre`
-        1. Go to `Menu Bar Only`
-            1. Set `Spotlight` to `Don't Show in Menu Bar`
-
-## Finder
-
-1. Open Finder 
-    1. Go to Settings
-    1. Go to General
-        1. Change `New Finder window show` to Downloads
-
-https://www.robinwieruch.de/mac-setup-web-development/
+        1. Increase the pointer size (`run.sh` attempts this, but it needs Full
+           Disk Access for your terminal, so it often has to be done by hand)
 
 ## 1Password
 
@@ -42,14 +78,6 @@ https://www.robinwieruch.de/mac-setup-web-development/
         1. Disable `Keep 1Password in the menu bar`
         1. Disable the `Show 1Password` shortcut
         1. Change the `Show Quick Access` shortcut to ⇧⌘P
-
-## AltTab
-
-1. Open AltTab
-    1. Go to General
-        1. Disable `Menubar icon`
-    1. Go to Controls
-        1. Change keyboard shortcut to select previous window to ⇧⇥ `Shortcuts when active... > Select previous window`
 
 ## Rectangle
 
@@ -70,7 +98,7 @@ https://www.robinwieruch.de/mac-setup-web-development/
     1. Go to Settings
         1.  Enable `Launch on login`
         1.  Enable `Hide menu bar icon`
-  
+
 ## SmoothScroll
 
 1. Open SmoothScroll
@@ -116,14 +144,15 @@ https://www.robinwieruch.de/mac-setup-web-development/
                 2. Add a new key mapping `+`
                 3. Send Hex Codes with the code `0x1B 0x08`
 
-## Oh My Zsh
+## Beyond Compare
 
-1. Open the `~./zshrc` file using a text editor
-    1. Change `ZSH_THEME` to `powerlevel10k/powerlevel10k`
-    1. Configure zsh-syntax-highlighting (add to the bottom of `.zshrc`) 
-    ```
-    echo "source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" >> ${ZDOTDIR:-$HOME}/.zshrc
-    ```
+`run.sh` configures git to use Beyond Compare as its diff and merge tool, but
+that only works once its CLI tools are installed.
+
+1. Open Beyond Compare
+    1. Go to the `Beyond Compare` menu
+        1. Choose `Install Command Line Tools` (installs `bcomp`)
+1. Verify with `command -v bcomp`
 
 ## GitHub SSH
 
@@ -157,6 +186,7 @@ https://www.robinwieruch.de/mac-setup-web-development/
 
 1. Install [Jupyter Extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter)
 
-## .NET MAUI
+## References
 
-https://khalidabuhakmeh.com/dotnet-maui-development-environment-set-up-walkthrough
+- [Mac setup for web development](https://www.robinwieruch.de/mac-setup-web-development/)
+- [.NET MAUI development environment set up walkthrough](https://khalidabuhakmeh.com/dotnet-maui-development-environment-set-up-walkthrough)

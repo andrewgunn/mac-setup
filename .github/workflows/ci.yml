@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  shellcheck:
+    name: Lint run.sh
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run shellcheck
+        run: shellcheck --shell=bash run.sh
+
+  brewfile:
+    name: Validate Brewfile
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Confirms every formula, cask and tap in the Brewfile actually resolves,
+      # so a typo'd name is caught here and not halfway through a new machine.
+      - name: Check Brewfile entries resolve
+        run: |
+          brew update
+          rc=0
+          while IFS= read -r line; do
+            case "$line" in
+              brew\ *) kind=--formula ;;
+              cask\ *) kind=--cask ;;
+              *) continue ;;
+            esac
+            name=$(printf '%s' "$line" | sed -E "s/^(brew|cask) *'([^']+)'.*/\2/")
+            if brew info "$kind" "$name" >/dev/null 2>&1; then
+              echo "ok       $name"
+            else
+              echo "MISSING  $name ($kind)"
+              rc=1
+            fi
+          done < Brewfile
+          exit $rc
