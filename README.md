@@ -50,6 +50,12 @@ Useful commands:
   alone. Add `--greedy` to the `start` command if you'd rather brew own them,
   at the cost of reinstalling apps while they're running.
 
+Casks that need root (Docker Desktop, the .NET SDK, Elgato) get their password
+prompt from `pinentry-mac` via `--sudo`. That dialog times out after 60 seconds,
+and a cask upgrade that loses its sudo step can fail *after* removing the old
+app — leaving nothing installed. If you're not at the machine when a prompt
+appears, reinstall from a terminal afterwards rather than assuming it worked.
+
 To sync the `Brewfile` with what's actually installed:
 
 ```
@@ -62,6 +68,37 @@ casually. It proposes removing everything not required by the `Brewfile` —
 which includes the dependencies of anything installed manually outside it, so
 `libpng`, `freetype` and friends show up as removable. Uninstall the handful
 you actually want gone by name instead.
+
+## Command Line Tools
+
+`brew doctor` may report "A newer Command Line Tools release is available" while
+System Settings > Software Update shows nothing to install. That usually means
+the CLT install has no package receipt:
+
+```
+pkgutil --pkg-info=com.apple.pkg.CLTools_Executables
+```
+
+If that says "No receipt", Software Update has no record of CLT and cannot
+update it, no matter what your update settings say. Reinstall so it registers:
+
+```
+sudo rm -rf /Library/Developer/CommandLineTools
+sudo xcode-select --install
+```
+
+After that it's maintained by Software Update along with everything else. There
+is no separate auto-update toggle for CLT — it rides the system settings below,
+all of which are on by default and worth confirming with:
+
+```
+defaults read /Library/Preferences/com.apple.SoftwareUpdate
+```
+
+`AutomaticCheckEnabled`, `AutomaticDownload`, `AutomaticallyInstallMacOSUpdates`,
+`ConfigDataInstall` and `CriticalUpdateInstall` should all be enabled. Don't
+automate `softwareupdate --install --all` — it will install macOS updates
+unattended and reboot the machine.
 
 ## OS
 
