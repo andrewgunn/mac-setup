@@ -53,11 +53,12 @@ defaults write com.apple.finder ShowStatusBar -bool true
 # Open new Finder windows in Downloads
 defaults write com.apple.finder NewWindowTarget -string 'PfLo'
 defaults write com.apple.finder NewWindowTargetPath -string "file://$HOME/Downloads/"
-killall Finder 2>/dev/null
+# Finder and Dock are restarted at the very end, not here: relaunching Finder
+# opens a window that steals keyboard focus, and doing that before the sudo
+# prompt below swallows part of the password being typed.
 
 # Show/hide the Dock instantly
 defaults write com.apple.dock autohide-time-modifier -int 0
-killall Dock 2>/dev/null
 
 # Keep Spotlight out of the menu bar (Cmd-Space still works)
 defaults -currentHost write com.apple.Spotlight MenuItemHidden -int 1
@@ -86,8 +87,11 @@ if [ -d /Library/Developer/CommandLineTools ] &&
   # `xcode-select --install` puts up.
   CLT_MARKER=/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
   sudo touch "$CLT_MARKER"
+  # Software Update often offers several CLT releases at once. Take the highest
+  # version, not the first one listed.
   CLT_LABEL=$(softwareupdate --list 2>/dev/null |
-    awk '/\* Label: Command Line Tools/ { sub(/^ *\* Label: /, ""); print; exit }')
+    sed -n 's/^ *\* Label: \(Command Line Tools.*\)$/\1/p' |
+    sort -V | tail -1)
   if [ -n "$CLT_LABEL" ]; then
     step "Install $CLT_LABEL" sudo softwareupdate --install "$CLT_LABEL"
   else
@@ -125,8 +129,12 @@ if ! command -v brew >/dev/null 2>&1; then
 fi
 
 step "brew update" brew update
-step "brew upgrade" brew upgrade
-step "brew bundle" brew bundle --file="$REPO_DIR/Brewfile"
+# Formulae only, and install-without-upgrading below. Upgrading casks here can
+# block indefinitely on a sudo prompt for the ones needing root (Docker Desktop,
+# the .NET SDK, Elgato), which stalls the whole script. Cask upgrades are the
+# autoupdate agent's job — it has an askpass helper wired up for exactly that.
+step "brew upgrade" brew upgrade --formula
+step "brew bundle" brew bundle --file="$REPO_DIR/Brewfile" --no-upgrade
 
 # Background auto-updates (formulae + casks) every 12 hours.
 # NOTE: `brew autoupdate start` with no flags only refreshes metadata; --upgrade
@@ -236,24 +244,28 @@ if [ -f "$HOME/.zshrc" ]; then
   fi
   append_once "$HOME/.zshrc" 'zsh-syntax-highlighting\.zsh' \
     "source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+
+  # `p10k configure` is an interactive wizard, but all it produces is ~/.p10k.zsh
+  # — so ship the finished file instead of making this a manual step. Only
+  # copied when absent, so later tweaks made by the wizard are never clobbered.
+  if [ ! -f "$HOME/.p10k.zsh" ] && [ -f "$REPO_DIR/config/p10k.zsh" ]; then
+    cp "$REPO_DIR/config/p10k.zsh" "$HOME/.p10k.zsh"
+    echo "    installed ~/.p10k.zsh from the repo"
+  fi
+  append_once "$HOME/.zshrc" '\.p10k\.zsh' \
+    '[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh'
 fi
 
 # ------------------------------------------------------------------------------
-# Code directory and Finder sidebar
+# Code directory
 # ------------------------------------------------------------------------------
+# The Finder sidebar entry stays manual. The only practical CLI for it, mysides,
+# was disabled in homebrew-cask on 2025-10-13 for being unmaintained, and an
+# installed-but-disabled package makes `brew upgrade` exit non-zero — which is
+# what silently skipped every cask upgrade before.
 echo
 echo "==> Code directory"
 mkdir -p "$HOME/Code"
-if command -v mysides >/dev/null 2>&1; then
-  if mysides list 2>/dev/null | grep -q "$HOME/Code"; then
-    echo "    already in the Finder sidebar"
-  else
-    step "Add Code to Finder sidebar" mysides add Code "file://$HOME/Code/"
-  fi
-else
-  echo "!!! mysides not installed; add ~/Code to the Finder sidebar by hand"
-  FAILED+=("Finder sidebar (mysides missing)")
-fi
 
 # ------------------------------------------------------------------------------
 # Rectangle
@@ -372,6 +384,16 @@ EOF
 chmod 600 "$HOME/.ssh/config"
 ssh-add --apple-use-keychain "$HOME/.ssh/github" 2>/dev/null ||
   echo "    (add the key to the agent later with: ssh-add --apple-use-keychain ~/.ssh/github)"
+
+# ------------------------------------------------------------------------------
+# Apply the Finder and Dock settings written at the top. Done last, on purpose:
+# relaunching Finder opens a window that takes keyboard focus, which mangles any
+# password being typed if it happens mid-script.
+# ------------------------------------------------------------------------------
+echo
+echo "==> Restarting Finder and Dock"
+killall Finder 2>/dev/null
+killall Dock 2>/dev/null
 
 # ------------------------------------------------------------------------------
 echo

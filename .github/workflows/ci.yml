@@ -33,11 +33,23 @@ jobs:
               *) continue ;;
             esac
             name=$(printf '%s' "$line" | sed -E "s/^(brew|cask) *'([^']+)'.*/\2/")
-            if brew info "$kind" "$name" >/dev/null 2>&1; then
-              echo "ok       $name"
-            else
-              echo "MISSING  $name ($kind)"
+            info=$(brew info "$kind" "$name" 2>/dev/null) || {
+              echo "MISSING   $name ($kind)"
               rc=1
+              continue
+            }
+            # `brew info` succeeds for deprecated and disabled packages, so the
+            # existence check alone is not enough: an installed-but-disabled
+            # package makes `brew upgrade` exit non-zero, which silently skips
+            # every cask upgrade after it.
+            if printf '%s' "$info" | grep -q "^Disabled because"; then
+              echo "DISABLED  $name ($kind)"
+              rc=1
+            elif printf '%s' "$info" | grep -q "^Deprecated because"; then
+              echo "DEPRECATED $name ($kind)"
+              rc=1
+            else
+              echo "ok        $name"
             fi
           done < Brewfile
           exit $rc
