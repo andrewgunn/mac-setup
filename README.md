@@ -80,12 +80,12 @@ pkgutil --pkg-info=com.apple.pkg.CLTools_Executables
 ```
 
 If that says "No receipt", Software Update has no record of CLT and cannot
-update it, no matter what your update settings say. Reinstall so it registers:
+update it, no matter what your update settings say.
 
-```
-sudo rm -rf /Library/Developer/CommandLineTools
-sudo xcode-select --install
-```
+`run.sh` detects and fixes this: when the directory exists but has no receipt it
+removes it and reinstalls headlessly via `softwareupdate`, which needs sudo and
+downloads roughly 1GB. When the receipt is present the whole step is skipped, so
+re-running costs nothing.
 
 After that it's maintained by Software Update along with everything else. There
 is no separate auto-update toggle for CLT — it rides the system settings below,
@@ -96,9 +96,12 @@ defaults read /Library/Preferences/com.apple.SoftwareUpdate
 ```
 
 `AutomaticCheckEnabled`, `AutomaticDownload`, `AutomaticallyInstallMacOSUpdates`,
-`ConfigDataInstall` and `CriticalUpdateInstall` should all be enabled. Don't
-automate `softwareupdate --install --all` — it will install macOS updates
-unattended and reboot the machine.
+`ConfigDataInstall` and `CriticalUpdateInstall` should all be enabled.
+
+macOS releases themselves are deliberately left out of `run.sh`. Installing one
+reboots the machine, which would abandon the rest of the script, so never
+automate `softwareupdate --install --all`. Let the settings above install them,
+and check Software Update by hand if one appears stuck.
 
 ## OS
 

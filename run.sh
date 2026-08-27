@@ -67,6 +67,44 @@ defaults -currentHost write com.apple.Spotlight MenuItemHidden -int 1
 defaults write com.apple.universalaccess mouseDriverCursorSize -float 2 2>/dev/null
 
 # ------------------------------------------------------------------------------
+# Xcode Command Line Tools
+# ------------------------------------------------------------------------------
+# Software Update can only offer CLT updates when the install is receipted. An
+# unreceipted install — the directory exists but pkgutil has no record of it —
+# is invisible to Software Update and silently never updates, while brew doctor
+# keeps reporting a newer release is available. Reinstall only in that case;
+# when the receipt is present this whole block is a no-op.
+if [ -d /Library/Developer/CommandLineTools ] &&
+   ! pkgutil --pkg-info=com.apple.pkg.CLTools_Executables >/dev/null 2>&1; then
+  echo
+  echo "==> Command Line Tools have no package receipt; reinstalling"
+  echo "    This needs sudo and downloads roughly 1GB."
+  sudo rm -rf /Library/Developer/CommandLineTools
+
+  # This marker makes the CLT update appear in `softwareupdate --list`, which
+  # lets it install headlessly instead of via the GUI dialog that
+  # `xcode-select --install` puts up.
+  CLT_MARKER=/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+  sudo touch "$CLT_MARKER"
+  CLT_LABEL=$(softwareupdate --list 2>/dev/null |
+    awk '/\* Label: Command Line Tools/ { sub(/^ *\* Label: /, ""); print; exit }')
+  if [ -n "$CLT_LABEL" ]; then
+    step "Install $CLT_LABEL" sudo softwareupdate --install "$CLT_LABEL"
+  else
+    echo "!!! Software Update offered no CLT package; falling back to"
+    echo "    xcode-select --install, which needs you to click through a dialog."
+    xcode-select --install 2>/dev/null || true
+    FAILED+=("Command Line Tools (finish the xcode-select dialog by hand)")
+  fi
+  sudo rm -f "$CLT_MARKER"
+fi
+
+# Note: macOS updates are deliberately NOT installed here. `softwareupdate
+# --install` on a macOS release reboots the machine, which would abandon the
+# rest of this script. The auto-update settings in System Settings handle them;
+# see the Command Line Tools section of the README.
+
+# ------------------------------------------------------------------------------
 # Homebrew
 # ------------------------------------------------------------------------------
 if ! command -v brew >/dev/null 2>&1 && [ ! -x /opt/homebrew/bin/brew ] && [ ! -x /usr/local/bin/brew ]; then
