@@ -239,6 +239,141 @@ if [ -f "$HOME/.zshrc" ]; then
 fi
 
 # ------------------------------------------------------------------------------
+# Code directory and Finder sidebar
+# ------------------------------------------------------------------------------
+echo
+echo "==> Code directory"
+mkdir -p "$HOME/Code"
+if command -v mysides >/dev/null 2>&1; then
+  if mysides list 2>/dev/null | grep -q "$HOME/Code"; then
+    echo "    already in the Finder sidebar"
+  else
+    step "Add Code to Finder sidebar" mysides add Code "file://$HOME/Code/"
+  fi
+else
+  echo "!!! mysides not installed; add ~/Code to the Finder sidebar by hand"
+  FAILED+=("Finder sidebar (mysides missing)")
+fi
+
+# ------------------------------------------------------------------------------
+# Rectangle
+# ------------------------------------------------------------------------------
+echo
+echo "==> Rectangle"
+# modifierFlags are the sum of Cocoa modifier masks: control 262144 + option
+# 524288 = 786432 (^⌥), plus shift 131072 = 917504 (^⌥⇧).
+RECT_CTRL_OPT=786432
+RECT_CTRL_OPT_SHIFT=917504
+rect_bind() {   # rect_bind <action> <keyCode> <modifierFlags>
+  defaults write com.knollsoft.Rectangle "$1" -dict \
+    keyCode -int "$2" modifierFlags -int "$3"
+}
+rect_unbind() { defaults write com.knollsoft.Rectangle "$1" -dict; }
+
+# Left/right half are deliberately left unset: alternateDefaultShortcuts already
+# maps them to ^⌥← and ^⌥→.
+defaults write com.knollsoft.Rectangle alternateDefaultShortcuts -bool true
+defaults write com.knollsoft.Rectangle allowAnyShortcut -bool true
+defaults write com.knollsoft.Rectangle launchOnLogin -bool true
+defaults write com.knollsoft.Rectangle hideMenubarIcon -bool true
+
+rect_bind centerHalf      125 "$RECT_CTRL_OPT"        # ^⌥↓
+rect_bind maximize        126 "$RECT_CTRL_OPT"        # ^⌥↑
+rect_bind center           36 "$RECT_CTRL_OPT"        # ^⌥↩
+rect_bind firstThird       18 "$RECT_CTRL_OPT"        # ^⌥1
+rect_bind centerThird      19 "$RECT_CTRL_OPT"        # ^⌥2
+rect_bind lastThird        20 "$RECT_CTRL_OPT"        # ^⌥3
+rect_bind firstTwoThirds  123 "$RECT_CTRL_OPT_SHIFT"  # ^⌥⇧←
+rect_bind lastTwoThirds   124 "$RECT_CTRL_OPT_SHIFT"  # ^⌥⇧→
+
+# Everything else off, so no stray default shortcuts remain bound.
+for action in bottomHalf bottomLeft bottomRight topHalf topLeft topRight \
+              firstFourth lastFourth firstThreeFourths lastThreeFourths \
+              maximizeHeight nextDisplay previousDisplay restore larger smaller; do
+  rect_unbind "$action"
+done
+
+# ------------------------------------------------------------------------------
+# Stats and SmoothScroll
+# ------------------------------------------------------------------------------
+echo
+echo "==> Stats and SmoothScroll"
+defaults write eu.exelban.Stats Battery_state -bool false
+defaults write eu.exelban.Stats LaunchAtLoginNext -bool true
+
+# Only these two behavioural keys: the SmoothScroll licence lives outside this
+# repo on purpose, so nothing here reads or writes it.
+defaults write com.galambalazs.SmoothScroll showMenuBarIcon -bool false
+defaults write com.galambalazs.SmoothScroll reverseWheelDirection -bool true
+defaults write com.galambalazs.SmoothScroll launchOnLogin -bool true
+
+# ------------------------------------------------------------------------------
+# iTerm
+# ------------------------------------------------------------------------------
+echo
+echo "==> iTerm"
+if pgrep -xq iTerm2 || pgrep -xq iTerm; then
+  echo "!!! iTerm is running; it would overwrite these on quit."
+  echo "    Quit iTerm (run this from Terminal.app) and re-run to apply them."
+  FAILED+=("iTerm settings (was running)")
+else
+  defaults write com.googlecode.iterm2 PromptOnQuit -bool false
+  defaults write com.googlecode.iterm2 OnlyWhenMoreTabs -bool false
+  defaults write com.googlecode.iterm2 UseLionStyleFullscreen -bool false
+  defaults write com.googlecode.iterm2 ShowFullScreenTabBar -bool false
+  defaults write com.googlecode.iterm2 DimInactiveSplitPanes -bool false
+
+  # Font and ligatures live inside the profile dict, so edit the plist directly,
+  # locating the default profile by its GUID rather than assuming index 0.
+  ITERM_PLIST="$HOME/Library/Preferences/com.googlecode.iterm2.plist"
+  ITERM_GUID=$(defaults read com.googlecode.iterm2 "Default Bookmark Guid" 2>/dev/null)
+  if [ -n "$ITERM_GUID" ] && [ -f "$ITERM_PLIST" ]; then
+    idx=0
+    while g=$(/usr/libexec/PlistBuddy -c "Print :\"New Bookmarks\":$idx:Guid" \
+              "$ITERM_PLIST" 2>/dev/null); do
+      if [ "$g" = "$ITERM_GUID" ]; then
+        /usr/libexec/PlistBuddy \
+          -c "Set :\"New Bookmarks\":$idx:\"Normal Font\" FiraCode-Retina 18" \
+          -c "Set :\"New Bookmarks\":$idx:\"ASCII Ligatures\" true" \
+          "$ITERM_PLIST" 2>/dev/null && echo "    set Fira Code 18 with ligatures"
+        break
+      fi
+      idx=$((idx + 1))
+    done
+    killall cfprefsd 2>/dev/null
+  fi
+fi
+
+# ------------------------------------------------------------------------------
+# Visual Studio Code
+# ------------------------------------------------------------------------------
+if command -v code >/dev/null 2>&1; then
+  echo
+  echo "==> Visual Studio Code"
+  step "Jupyter extension" code --install-extension ms-toolsai.jupyter --force
+fi
+
+# ------------------------------------------------------------------------------
+# GitHub SSH key
+# ------------------------------------------------------------------------------
+echo
+echo "==> GitHub SSH"
+mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
+if [ ! -f "$HOME/.ssh/github" ]; then
+  echo "    Generating an ed25519 key; you'll be asked for a passphrase."
+  ssh-keygen -t ed25519 -C github -f "$HOME/.ssh/github"
+fi
+append_block_once "$HOME/.ssh/config" 'IdentityFile ~/.ssh/github' <<'EOF'
+Host *
+  AddKeysToAgent yes
+  UseKeychain yes
+  IdentityFile ~/.ssh/github
+EOF
+chmod 600 "$HOME/.ssh/config"
+ssh-add --apple-use-keychain "$HOME/.ssh/github" 2>/dev/null ||
+  echo "    (add the key to the agent later with: ssh-add --apple-use-keychain ~/.ssh/github)"
+
+# ------------------------------------------------------------------------------
 echo
 if [ ${#FAILED[@]} -gt 0 ]; then
   echo "==> Finished with ${#FAILED[@]} failed step(s):"
