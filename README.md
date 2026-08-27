@@ -21,9 +21,11 @@ rather than stopping at the first one.
 - Reinstalls the Xcode Command Line Tools if they have no package receipt
 - Configures git, including Beyond Compare as the diff and merge tool
 - Installs the .NET tooling and Claude Code
-- Sets up Oh My Zsh with powerlevel10k and zsh-syntax-highlighting
+- Sets up Oh My Zsh with zsh-syntax-highlighting, and installs the
+  powerlevel10k theme along with the finished `config/p10k.zsh`, so the
+  interactive `p10k configure` wizard never has to be run
 - Applies the Finder, Dock and Spotlight defaults
-- Creates `~/Code` and adds it to the Finder sidebar
+- Creates `~/Code`
 - Configures Rectangle, Stats, SmoothScroll and iTerm
 - Installs the VS Code Jupyter extension
 - Generates a GitHub SSH key and adds it to the keychain
@@ -114,10 +116,11 @@ and check Software Update by hand if one appears stuck.
 Everything below resisted automation for a stated reason. If a reason stops
 being true, move the step into `run.sh`.
 
-### powerlevel10k
+### Finder sidebar
 
-Run `p10k configure`. It's an interactive wizard with no unattended mode; the
-theme itself is already activated in `.zshrc` by `run.sh`.
+Add `~/Code` to the Finder sidebar by dragging it there. `run.sh` creates the
+directory, but there's no maintained CLI for sidebar favourites — `mysides` was
+the only real option and homebrew-cask disabled it on 2025-10-13.
 
 ### GitHub
 
