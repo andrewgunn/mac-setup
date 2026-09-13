@@ -61,6 +61,7 @@ SECTION_SECS=()
 SECTION_START=$SECONDS
 CURRENT_SECTION=''
 INSTALLED_COUNT=0
+SHELL_CHANGED=0   # set when ~/.zprofile or ~/.zshrc gains a line
 
 emit() { printf '%s\n' "$*"; printf '%s\n' "$*" >> "$LOG"; }
 fmt_secs() {   # 125 -> "2m 5s"
@@ -91,7 +92,7 @@ section() {
   SECTION_START=$SECONDS
   SECTION_N=$((SECTION_N + 1))
   emit ''
-  emit "$BOLD$1$RESET $DIM$SECTION_N/$SECTION_TOTAL$RESET"
+  emit "$BOLD$1$RESET $DIM$SECTION_N of $SECTION_TOTAL$RESET"
   set_title "$1"
 }
 
@@ -222,6 +223,7 @@ append_once() {
   local file="$1" pattern="$2" line="$3"
   [ -f "$file" ] && grep -q "$pattern" "$file" && return 0
   printf '%s\n' "$line" >> "$file"
+  case "$file" in "$HOME"/.zprofile|"$HOME"/.zshrc) SHELL_CHANGED=1 ;; esac
   ok "added to ${file/#$HOME/~}: $DIM$line$RESET"
 }
 
@@ -234,7 +236,19 @@ append_block_once() {
   fi
   printf '\n' >> "$file"
   cat >> "$file"
+  case "$file" in "$HOME"/.zprofile|"$HOME"/.zshrc) SHELL_CHANGED=1 ;; esac
   ok "added block to ${file/#$HOME/~}: $DIM$marker$RESET"
+}
+
+# notify <title> <body>. iTerm posts notifications itself when asked via its
+# escape sequence, so they carry its icon; anywhere else a bare osascript
+# notification (credited to Script Editor) is the best available.
+notify() {
+  if [ "$TTY" = 1 ] && [ "${TERM_PROGRAM:-}" = iTerm.app ]; then
+    printf '\e]777;notify;%s;%s\a' "$1" "$2" > /dev/tty
+  else
+    osascript -e "display notification \"$2\" with title \"$1\"" 2>/dev/null
+  fi
 }
 
 SUDO_KEEPALIVE=''
@@ -922,17 +936,12 @@ fi
 todo "drag ~/Code into the Finder sidebar"
 todo "1Password, iTerm key mappings, Rider settings"
 emit ''
-info "open a new terminal to pick up the shell changes"
-emit ''
+if [ "$SHELL_CHANGED" = 1 ]; then
+  info "shell config changed: run ${RESET}exec zsh${DIM} here, or open a new terminal"
+  emit ''
+fi
 
-# A nudge for anyone who wandered off during the downloads. Sending the
-# notification via the terminal app makes it carry that app's icon instead of
-# Script Editor's, which is what a bare osascript notification gets.
+# A nudge for anyone who wandered off during the downloads.
 [ "$TTY" = 1 ] && printf '\a'
-case "${TERM_PROGRAM:-}" in
-  iTerm.app) NOTIFIER='tell application "iTerm2" to ' ;;
-  Apple_Terminal) NOTIFIER='tell application "Terminal" to ' ;;
-  *) NOTIFIER='' ;;
-esac
-osascript -e "${NOTIFIER}display notification \"$SUMMARY\" with title \"mac-setup\"" 2>/dev/null
+notify "mac-setup" "$SUMMARY"
 exit 0
