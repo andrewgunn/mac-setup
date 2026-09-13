@@ -7,7 +7,7 @@
 #   ./run.sh -h       this help
 #
 # Everything printed is also written to ~/Library/Logs/mac-setup/.
-# shellcheck disable=SC2329  # several functions are only invoked via step/trap
+# shellcheck disable=SC2317,SC2329  # several functions are only invoked via step/trap
 set -uo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
