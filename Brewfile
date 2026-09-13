@@ -16,7 +16,6 @@ brew 'jq'
 brew 'lazydocker'
 brew 'lazygit'
 brew 'librsvg'
-brew 'mas'
 #brew 'mongodb-atlas-cli'
 brew 'nmap'
 brew 'node'
@@ -74,8 +73,3 @@ cask 'vlc'
 cask 'whatsapp'
 cask 'wifiman'
 cask 'wispr-flow'
-
-# Mac App Store (needs `mas`, above; run.sh asks about the App Store sign-in
-# only when something is listed here). Xcode is left out on purpose: 13GB, and
-# only .NET MAUI builds for iOS or macOS need it. Uncomment to bring it back.
-#mas 'Xcode', id: 497799835

@@ -30,8 +30,9 @@ over two minutes also ring the bell and post a notification.
 ### What it does
 
 - Rosetta 2, Homebrew, and everything in the `Brewfile`. Puts `brew` on the
-  PATH of new shells. Xcode is deliberately left out (only MAUI builds for
-  iOS or macOS need it); the `Brewfile` has the line to uncomment
+  PATH of new shells. No App Store apps: Xcode is deliberately left out, since
+  only MAUI builds for iOS or macOS need it (`brew 'mas'` plus
+  `mas 'Xcode', id: 497799835` brings it back)
 - A LaunchAgent that upgrades Homebrew packages in the background, leaving
   self-updating apps and `.pkg` installers alone ([details](#homebrew))
 - Reinstalls the Command Line Tools if they have no package receipt
