@@ -129,42 +129,94 @@ if ! command -v brew >/dev/null 2>&1; then
 fi
 
 step "brew update" brew update
-# Formulae only, and install-without-upgrading below. Upgrading casks here can
-# block indefinitely on a sudo prompt for the ones needing root (Docker Desktop,
-# the .NET SDK, Elgato), which stalls the whole script. Cask upgrades are the
-# autoupdate agent's job — it has an askpass helper wired up for exactly that.
 step "brew upgrade" brew upgrade --formula
 step "brew bundle" brew bundle --file="$REPO_DIR/Brewfile" --no-upgrade
+# Casks whose installers need root are skipped by the background updater (a
+# launchd job has nowhere to ask for a password), so upgrade them here, where
+# someone is at the keyboard. The list lives in config/brew-autoupdate.sh; the
+# other casks are the background updater's job.
+SUDO_CASKS=$("$REPO_DIR/config/brew-autoupdate.sh" --print-sudo-casks)
+# shellcheck disable=SC2086  # word-splitting the list is the point
+step "brew upgrade sudo casks" brew upgrade --cask $SUDO_CASKS
 
-# Background auto-updates (formulae + casks) every 12 hours.
-# NOTE: `brew autoupdate start` with no flags only refreshes metadata; --upgrade
-# is what actually installs the new versions. --sudo (needs pinentry-mac, in the
-# Brewfile) lets casks that require root upgrade unattended.
-# Add --greedy to also upgrade casks that ship their own updater.
+# ------------------------------------------------------------------------------
+# Homebrew background upgrades
+# ------------------------------------------------------------------------------
+# A LaunchAgent runs config/brew-autoupdate.sh every 12 hours and at login. It
+# replaces the domt4/autoupdate tap, which had no way to stop Homebrew 6 from
+# upgrading self-updating casks (quitting iTerm, Claude, 1Password... to do
+# it), and whose --sudo option was the source of the background password
+# prompts. The script explains what it skips and why.
 echo
-echo "==> Homebrew auto-updates"
-brew untap homebrew/autoupdate 2>/dev/null    # legacy duplicate of domt4/autoupdate
-brew tap domt4/autoupdate
-brew trust domt4/autoupdate
-brew autoupdate delete
-step "brew autoupdate start" brew autoupdate start 12h \
-  --upgrade --cleanup --immediate --sudo --notify-on-error
+echo "==> Homebrew background upgrades"
+BAU_LABEL=com.andrewgunn.brew-autoupdate
+BAU_DIR="$HOME/Library/Application Support/brew-autoupdate"
+BAU_PLIST="$HOME/Library/LaunchAgents/$BAU_LABEL.plist"
+BAU_LOG="$HOME/Library/Logs/brew-autoupdate.log"
 
-# autoupdate's notifier is a background-only (LSUIElement) app whose binary is
-# executed directly rather than launched through LaunchServices, so macOS always
-# refuses its notification permission request and it never appears in System
-# Settings > Notifications. That makes failed runs completely silent. Warn at
-# login shell startup instead, which needs no permissions.
-append_block_once ~/.zprofile 'brew-autoupdate: warn when the last run failed' <<'EOF'
-# brew-autoupdate: warn when the last run failed
-if [ -n "${BASH_VERSION:-}${ZSH_VERSION:-}" ]; then
-  _bau_exit=$(launchctl list com.github.domt4.homebrew-autoupdate 2>/dev/null \
-    | awk -F'= ' '/LastExitStatus/ { gsub(/[; ]/, "", $2); print $2 }')
-  if [ -n "$_bau_exit" ] && [ "$_bau_exit" != "0" ]; then
-    printf '\033[33mbrew autoupdate: last run failed (exit %s) — run `brew autoupdate logs`\033[0m\n' "$_bau_exit"
-  fi
-  unset _bau_exit
+# Retire the tap-based agent if it's still around, along with the ~/.zprofile
+# warning that referenced its launchd label (a fresh one is appended below).
+if brew tap 2>/dev/null | grep -qx 'domt4/autoupdate'; then
+  echo "    removing the domt4/autoupdate agent"
+  brew autoupdate delete >/dev/null 2>&1
+  brew untap domt4/autoupdate >/dev/null 2>&1
+  brew untrust domt4/autoupdate >/dev/null 2>&1
 fi
+if [ -f ~/.zprofile ] && grep -qF 'launchctl list com.github.domt4.homebrew-autoupdate' ~/.zprofile; then
+  sed -i '' '/^# brew-autoupdate: warn when the last run failed$/,/^fi$/d' ~/.zprofile
+  echo "    removed the old warning block from ~/.zprofile"
+fi
+
+mkdir -p "$BAU_DIR" "$HOME/Library/LaunchAgents"
+install -m 755 "$REPO_DIR/config/brew-autoupdate.sh" "$BAU_DIR/brew-autoupdate"
+cat > "$BAU_PLIST" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>$BAU_LABEL</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>$BAU_DIR/brew-autoupdate</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StartInterval</key>
+  <integer>43200</integer>
+  <key>StandardOutPath</key>
+  <string>$BAU_LOG</string>
+  <key>StandardErrorPath</key>
+  <string>$BAU_LOG</string>
+  <key>LowPriorityIO</key>
+  <true/>
+  <key>ProcessType</key>
+  <string>Background</string>
+</dict>
+</plist>
+EOF
+
+# (Re)load the agent. bootout kills a run in progress, so leave a running one
+# alone: the script path is unchanged, so it picks up script changes next run,
+# but plist changes wait for the next run.sh.
+if launchctl print "gui/$(id -u)/$BAU_LABEL" 2>/dev/null | grep -q 'state = running'; then
+  echo "!!! a brew autoupdate run is in progress; not reloading the agent"
+  FAILED+=("Reload the brew-autoupdate agent (re-run once the current run finishes)")
+else
+  launchctl bootout "gui/$(id -u)/$BAU_LABEL" 2>/dev/null
+  step "Load $BAU_LABEL" launchctl bootstrap "gui/$(id -u)" "$BAU_PLIST"
+fi
+
+# Failed runs would otherwise be silent. Warn at login shell startup instead;
+# launchd keeps the last exit status, and reading it needs no permissions.
+append_block_once ~/.zprofile 'brew-autoupdate (mac-setup): warn when the last run failed' <<EOF
+# brew-autoupdate (mac-setup): warn when the last run failed
+_bau_exit=\$(launchctl list $BAU_LABEL 2>/dev/null |
+  awk -F'= ' '/LastExitStatus/ { gsub(/[; ]/, "", \$2); print \$2 }')
+if [ -n "\$_bau_exit" ] && [ "\$_bau_exit" != "0" ]; then
+  printf '\033[33mbrew autoupdate: last run failed (launchd status %s) — see ${BAU_LOG/#$HOME/~}\033[0m\n' "\$_bau_exit"
+fi
+unset _bau_exit
 EOF
 
 # ------------------------------------------------------------------------------
@@ -215,7 +267,11 @@ fi
 # ------------------------------------------------------------------------------
 echo
 echo "==> Claude Code"
-step "Install Claude Code" bash -c 'curl -fsSL https://claude.ai/install.sh | bash'
+if [ -x "$HOME/.local/bin/claude" ] || command -v claude >/dev/null 2>&1; then
+  echo "    already installed; it updates itself"
+else
+  step "Install Claude Code" bash -c 'curl -fsSL https://claude.ai/install.sh | bash'
+fi
 # shellcheck disable=SC2016  # $HOME is deliberately written literally
 append_once ~/.zprofile '\.local/bin' 'export PATH="$PATH:$HOME/.local/bin"'
 
@@ -226,7 +282,7 @@ echo
 echo "==> Oh My Zsh"
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
   step "Install Oh My Zsh" env RUNZSH=no CHSH=no sh -c \
-    "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 fi
 
 P10K_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k"

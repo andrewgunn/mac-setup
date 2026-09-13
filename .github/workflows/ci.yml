@@ -8,12 +8,12 @@ on:
 
 jobs:
   shellcheck:
-    name: Lint run.sh
+    name: Lint shell scripts
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Run shellcheck
-        run: shellcheck --shell=bash run.sh
+        run: shellcheck run.sh config/brew-autoupdate.sh
 
   brewfile:
     name: Validate Brewfile

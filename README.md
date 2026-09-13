@@ -17,7 +17,8 @@ rather than stopping at the first one.
 ### What it does
 
 - Installs Homebrew and everything in the `Brewfile`
-- Sets up background auto-updates for formulae and casks
+- Installs a LaunchAgent that upgrades formulae and casks in the background,
+  leaving self-updating apps and root-installer casks alone
 - Reinstalls the Xcode Command Line Tools if they have no package receipt
 - Configures git, including Beyond Compare as the diff and merge tool
 - Installs the .NET tooling and Claude Code
@@ -32,37 +33,43 @@ rather than stopping at the first one.
 
 ## Homebrew
 
-`run.sh` sets up [autoupdate](https://github.com/DomT4/homebrew-autoupdate) to
-upgrade formulae and casks in the background every 12 hours:
+`run.sh` installs a LaunchAgent, `com.andrewgunn.brew-autoupdate`, that runs
+`config/brew-autoupdate.sh` every 12 hours and at login. Each run does
+`brew update`, `brew upgrade --formula`, `brew upgrade --cask` and
+`brew cleanup`, with two deliberate exceptions:
 
-```
-brew autoupdate start 12h --upgrade --cleanup --immediate --sudo --notify-on-error
-```
+- **Casks that update themselves** (`auto_updates true`: Chrome, iTerm,
+  Claude, 1Password, Cursor, Slack, Docker Desktop, and most of the rest of the
+  `Brewfile`) are left alone. Homebrew 6 changed the default so `brew upgrade`
+  replaces these whenever the cask is ahead of the installed app, and it does
+  that by quitting the running app. The script sets
+  `HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS` to restore the old behaviour; the
+  apps update themselves in their own time. `brew outdated --cask --greedy`
+  shows what brew would have done.
+- **Casks whose installer needs root** (`SUDO_CASKS` in the script, currently
+  just `dotnet-sdk`) are skipped, because a launchd job has nowhere to ask for
+  a password. `run.sh` upgrades them instead, while you're at the keyboard.
+  Note that the .NET SDK upgrade uninstalls every `com.microsoft.dotnet.*`
+  package first, including older runtimes.
 
-`--upgrade` is the important flag — without it, autoupdate only refreshes
-metadata and never actually installs anything. `--sudo` opens a GUI password
-prompt for casks that need root (needs `pinentry-mac`, which is in the
-`Brewfile`).
+This replaced the [domt4/autoupdate](https://github.com/DomT4/homebrew-autoupdate)
+tap. That tap has no way to pass the environment variable above, and its
+`--sudo` mode (a `pinentry-mac` password dialog with a 60-second timeout) was
+the source of the background password prompts. `run.sh` removes the tap and its
+agent if they're still installed.
 
 Useful commands:
 
-- `brew autoupdate status` — confirm it's running and check which flags are set
-- `brew autoupdate logs --follow` — watch a run, or find out why one failed
-- `brew outdated --cask --greedy` — casks with their own updaters (Chrome,
-  Slack, Spotify, Cursor, VS Code) update themselves and are deliberately left
-  alone. Add `--greedy` to the `start` command if you'd rather brew own them,
-  at the cost of reinstalling apps while they're running.
+```
+launchctl print gui/$UID/com.andrewgunn.brew-autoupdate   # state, run count, last exit code
+tail -f ~/Library/Logs/brew-autoupdate.log                # watch a run, or see why one failed
+launchctl kickstart gui/$UID/com.andrewgunn.brew-autoupdate   # run now
+```
 
-Casks that need root (Docker Desktop, the .NET SDK, Elgato) get their password
-prompt from `pinentry-mac`. Two warnings from experience:
-
-- The prompt times out after 60 seconds, and a cask upgrade that loses its sudo
-  step can fail *after* removing the old app, leaving nothing installed. If you
-  weren't at the machine when a prompt appeared, check the app is still there.
-- The tap generates its askpass with `OPTION allow-external-cache`, so pinentry
-  can hand sudo a stale keychain value instead of what you typed. That shows up
-  as the password dialog reappearing immediately after you submit it. Install
-  those casks by hand when that happens.
+A failed run turns into a yellow warning the next time a login shell starts
+(`~/.zprofile` reads the last exit status from launchd). The script also posts
+a notification, but launchd jobs aren't guaranteed notification permission, so
+don't rely on it.
 
 To sync the `Brewfile` with what's actually installed:
 
