@@ -29,15 +29,23 @@ if [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-dumb}" != dumb ]; then
   TTY=1
   BOLD=$'\e[1m' DIM=$'\e[2m' RED=$'\e[31m' GREEN=$'\e[32m' YELLOW=$'\e[33m'
   BLUE=$'\e[34m' CYAN=$'\e[36m' RESET=$'\e[0m'
-  G_OK='✔' G_FAIL='✖' G_WARN='⚠' G_RUN='▸' G_INFO='·' G_TODO='☐' G_RULE='─' G_BAR='█'
-  COLS=$(tput cols 2>/dev/null || echo 80)
+  G_OK='✔' G_FAIL='✖' G_WARN='⚠' G_RUN='▸' G_INFO='·' G_TODO='☐' G_RULE='─' G_BAR='━'
 else
   TTY=0
   BOLD='' DIM='' RED='' GREEN='' YELLOW='' BLUE='' CYAN='' RESET=''
   G_OK='ok  ' G_FAIL='FAIL' G_WARN='warn' G_RUN='>' G_INFO='-' G_TODO='[ ]' G_RULE='-' G_BAR='#'
-  COLS=80
 fi
-[ "$COLS" -gt 100 ] && COLS=100
+# Terminal width, re-read whenever something is drawn to fit it: the window can
+# be resized mid-run, and a line that wraps under the spinner breaks the redraw.
+COLS=80
+measure() {
+  local c=''
+  [ "$TTY" = 1 ] && c=$(stty size < /dev/tty 2>/dev/null | awk '{ print $2 }')
+  [ -z "$c" ] || [ "$c" -lt 20 ] && c=80
+  [ "$c" -gt 100 ] && c=100
+  COLS=$((c - 1))   # some terminals wrap when the last column is written
+}
+measure
 
 # Everything shown is also appended to a log (colours included; `less -R`).
 LOG_DIR="$HOME/Library/Logs/mac-setup"
@@ -83,9 +91,10 @@ section() {
   CURRENT_SECTION="$1"
   SECTION_START=$SECONDS
   SECTION_N=$((SECTION_N + 1))
+  measure
   local counter="$SECTION_N/$SECTION_TOTAL"
-  local n=$((COLS - ${#1} - ${#counter} - 7))
-  [ "$n" -lt 4 ] && n=4
+  local n=$((COLS - ${#1} - ${#counter} - 6))
+  [ "$n" -lt 2 ] && n=2
   emit ''
   emit "$DIM$G_RULE$G_RULE$RESET $BOLD$1$RESET $DIM$(repeat "$G_RULE" "$n") $counter$RESET"
   set_title "$1"
@@ -95,13 +104,16 @@ section() {
 # of the command's output in grey, redrawn in place. On SIGTERM it erases
 # itself so the caller can print the one-line result in its place.
 render() {   # render <label> <output-file>
-  local frames=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏) i=0 n=0 body width=$((COLS - 8))
+  local frames=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏) i=0 n=0 body label
   trap '[ "$n" -gt 0 ] && printf "\e[%dA\r\e[J" "$n" > /dev/tty; exit 0' TERM
   while :; do
-    body=$(tail -n 4 "$2" 2>/dev/null | tr '\r' '\n' | tail -n 4 | cut -c1-"$width")
+    measure
+    label=$(printf '%s' "$1" | cut -c1-$((COLS - 4)))
+    body=$(tail -n 4 "$2" 2>/dev/null | tr '\r' '\n' | tail -n 4 |
+      sed $'s/\e\\[[0-9;]*[A-Za-z]//g' | expand | cut -c1-$((COLS - 6)))
     {
       [ "$n" -gt 0 ] && printf '\e[%dA' "$n"
-      printf '\r\e[J  %s%s%s %s\n' "$CYAN" "${frames[i % 10]}" "$RESET" "$1"
+      printf '\r\e[J  %s%s%s %s\n' "$CYAN" "${frames[i % 10]}" "$RESET" "$label"
       if [ -n "$body" ]; then
         printf '%s\n' "$body" | sed "s/^/      $DIM/;s/\$/$RESET/"
         n=$((1 + $(printf '%s\n' "$body" | wc -l)))
@@ -297,7 +309,7 @@ pref com.apple.finder NewWindowTarget -string 'PfLo'
 pref com.apple.finder NewWindowTargetPath -string "file://$HOME/Downloads/"
 # Screenshots go to Downloads too, not the Desktop
 pref com.apple.screencapture location -string "$HOME/Downloads"
-prefs_done "Finder: list view, folders first, path and status bars, hidden files, opens in Downloads"
+prefs_done "Finder: list view, folders first, hidden files, opens in Downloads"
 # Finder and Dock are restarted at the very end, not here: relaunching Finder
 # opens a window that steals keyboard focus, which mangles anything being typed.
 
@@ -317,7 +329,7 @@ pref NSGlobalDomain AppleShowAllExtensions -bool true
 pref NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
 pref NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
 pref -currentHost com.apple.Spotlight MenuItemHidden -int 1
-prefs_done "System: dark mode, scroll bars always, file extensions, no auto-capitalisation, no Spotlight menu icon"
+prefs_done "System: dark mode, scroll bars, extensions, no auto-capitalise, no Spotlight icon"
 
 # Trackpad: tap to click (all three keys are needed for it to stick everywhere)
 pref com.apple.AppleMultitouchTrackpad Clicking -bool true
@@ -353,9 +365,9 @@ section "Command Line Tools"
 if [ ! -d /Library/Developer/CommandLineTools ]; then
   info "not installed yet; the Homebrew installer takes care of that"
 elif pkgutil --pkg-info=com.apple.pkg.CLTools_Executables >/dev/null 2>&1; then
-  ok "installed and receipted, so Software Update keeps them current"
+  ok "installed and receipted; Software Update keeps them current"
 else
-  warn "installed without a package receipt, so they never update; reinstalling (about 1GB)"
+  warn "no package receipt, so they never update; reinstalling (about 1GB)"
   sudo rm -rf /Library/Developer/CommandLineTools
 
   # This marker makes the CLT update appear in `softwareupdate --list`, which
@@ -444,7 +456,7 @@ for cask in $("$REPO_DIR/config/brew-autoupdate.sh" --print-sudo-casks); do
   [ -d "$(brew --caskroom)/$cask" ] && SUDO_CASKS+=("$cask")
 done
 if [ ${#SUDO_CASKS[@]} -gt 0 ]; then
-  step -i "brew upgrade (casks needing sudo: ${SUDO_CASKS[*]})" \
+  step -i "brew upgrade sudo casks: ${SUDO_CASKS[*]}" \
     indented brew upgrade --cask "${SUDO_CASKS[@]}"
 fi
 
@@ -512,7 +524,7 @@ if launchctl print "gui/$(id -u)/$BAU_LABEL" 2>/dev/null | grep -q 'state = runn
   fail "brew-autoupdate agent not reloaded: a run is in progress, re-run later"
 else
   launchctl bootout "gui/$(id -u)/$BAU_LABEL" 2>/dev/null
-  step "Load the LaunchAgent (every 12h and at login)" launchctl bootstrap "gui/$(id -u)" "$BAU_PLIST"
+  step "Load the LaunchAgent (12-hourly and at login)" launchctl bootstrap "gui/$(id -u)" "$BAU_PLIST"
 fi
 
 # Failed runs would otherwise be silent. Warn at login shell startup instead;
@@ -549,7 +561,7 @@ for key in init.defaultBranch pull.rebase fetch.prune alias.lg diff.tool difftoo
   git config --file ~/.gitconfig --unset-all "$key" 2>/dev/null || true
 done
 if git config --global --includes --get init.defaultBranch >/dev/null; then
-  ok "config/gitconfig included: Beyond Compare, git lg, prune on fetch"
+  ok "config/gitconfig included (Beyond Compare, git lg, prune)"
 else
   fail "config/gitconfig is not being read"
 fi
@@ -576,7 +588,7 @@ if command -v dotnet >/dev/null 2>&1; then
   # shellcheck disable=SC2016  # $HOME is deliberately written literally
   append_once ~/.zprofile '\.dotnet/tools' 'export PATH="$PATH:$HOME/.dotnet/tools"'
 else
-  fail ".NET setup skipped: dotnet is not on PATH (did the dotnet-sdk cask install?)"
+  fail ".NET skipped: dotnet not on PATH (did the dotnet-sdk cask install?)"
 fi
 
 # ==============================================================================
@@ -584,7 +596,7 @@ fi
 # ==============================================================================
 section "Claude Code"
 if [ -x "$HOME/.local/bin/claude" ] || command -v claude >/dev/null 2>&1; then
-  ok "installed ($(claude --version 2>/dev/null | head -1 || echo 'version unknown')); it updates itself"
+  ok "installed, $(claude --version 2>/dev/null | awk '{ print $1; exit }'); it updates itself"
 else
   step "Install Claude Code" bash -c 'curl -fsSL https://claude.ai/install.sh | bash'
 fi
@@ -671,7 +683,7 @@ for action in bottomHalf bottomLeft bottomRight topHalf topLeft topRight \
               maximizeHeight nextDisplay previousDisplay restore larger smaller; do
   rect_unbind "$action"
 done
-ok "Rectangle shortcuts: ^⌥ arrows halves and maximise, ^⌥1-3 thirds, ^⌥⇧ arrows two-thirds, rest unbound"
+ok "Rectangle shortcuts: ^⌥ halves/maximise, ^⌥1-3 thirds, ^⌥⇧ two-thirds"
 
 pref eu.exelban.Stats Battery_state -bool false
 pref eu.exelban.Stats LaunchAtLoginNext -bool true
@@ -682,21 +694,21 @@ prefs_done "Stats: launches at login, battery hidden"
 pref com.galambalazs.SmoothScroll showMenuBarIcon -bool false
 pref com.galambalazs.SmoothScroll reverseWheelDirection -bool true
 pref com.galambalazs.SmoothScroll launchOnLogin -bool true
-prefs_done "SmoothScroll: launches at login, reversed wheel, no menu bar icon (licence untouched)"
+prefs_done "SmoothScroll: login item, reversed wheel, no menu bar icon"
 
 # ==============================================================================
 # iTerm
 # ==============================================================================
 section "iTerm"
 if pgrep -xq iTerm2 || pgrep -xq iTerm; then
-  fail "iTerm settings skipped: iTerm is running and would overwrite them on quit (run this from Terminal.app)"
+  fail "iTerm settings skipped: it's running and would overwrite them (use Terminal.app)"
 else
   pref com.googlecode.iterm2 PromptOnQuit -bool false
   pref com.googlecode.iterm2 OnlyWhenMoreTabs -bool false
   pref com.googlecode.iterm2 UseLionStyleFullscreen -bool false
   pref com.googlecode.iterm2 ShowFullScreenTabBar -bool false
   pref com.googlecode.iterm2 DimInactiveSplitPanes -bool false
-  prefs_done "iTerm: no quit prompt, non-native fullscreen, no dimming of inactive panes"
+  prefs_done "iTerm: no quit prompt, non-native fullscreen, no pane dimming"
 
   # Font and ligatures live inside the profile dict, so edit the plist directly,
   # locating the default profile by its GUID rather than assuming index 0.
@@ -717,7 +729,7 @@ else
     done
     killall cfprefsd 2>/dev/null
   else
-    fail "iTerm font not set: it has no preferences yet (open iTerm once, quit it, re-run)"
+    fail "iTerm font not set: no preferences yet (open iTerm once, quit, re-run)"
   fi
 fi
 
@@ -824,36 +836,39 @@ ELAPSED=$(fmt_secs $((SECONDS - START)))
 emit ''
 emit "$DIM$(repeat "$G_RULE" "$COLS")$RESET"
 if [ ${#FAILED[@]} -gt 0 ]; then
-  emit "  $RED$G_FAIL$RESET $BOLD${#FAILED[@]} step(s) failed$RESET in $ELAPSED, $INSTALLED_COUNT package(s) installed"
+  emit "  $RED$G_FAIL$RESET $BOLD${#FAILED[@]} failed$RESET · $ELAPSED · $INSTALLED_COUNT installed"
   for f in "${FAILED[@]}"; do emit "      $RED$G_FAIL$RESET $f"; done
   info "details: ${LOG/#$HOME/~}"
   SUMMARY="${#FAILED[@]} step(s) failed in $ELAPSED"
 else
-  emit "  $GREEN$G_OK$RESET ${BOLD}All done$RESET in $ELAPSED, $INSTALLED_COUNT package(s) installed, nothing failed"
+  emit "  $GREEN$G_OK$RESET ${BOLD}All done$RESET · $ELAPSED · $INSTALLED_COUNT installed · 0 failed"
   SUMMARY="All done in $ELAPSED"
 fi
 
-# Where the time went: one bar per section, scaled to the slowest.
+# Where the time went: one bar per section, scaled to the slowest, only for
+# sections that took a noticeable amount of time.
 MAX_SECS=1
 for s in "${SECTION_SECS[@]}"; do [ "$s" -gt "$MAX_SECS" ] && MAX_SECS=$s; done
 if [ "$MAX_SECS" -ge 5 ]; then
+  measure
+  BAR_MAX=$((COLS - 36)); [ "$BAR_MAX" -gt 30 ] && BAR_MAX=30; [ "$BAR_MAX" -lt 8 ] && BAR_MAX=8
   emit ''
   emit "  ${BOLD}Where the time went$RESET"
   i=0
   while [ "$i" -lt "${#SECTION_NAMES[@]}" ]; do
     s=${SECTION_SECS[$i]}
-    if [ "$s" -ge 1 ]; then
-      bar=$((s * 30 / MAX_SECS)); [ "$bar" -lt 1 ] && bar=1
-      emit "$(printf '    %-22s %7s  %s%s%s' "${SECTION_NAMES[$i]}" "$(fmt_secs "$s")" "$DIM" "$(repeat "$G_BAR" "$bar")" "$RESET")"
+    if [ "$s" -ge 2 ]; then
+      bar=$((s * BAR_MAX / MAX_SECS)); [ "$bar" -lt 1 ] && bar=1
+      emit "$(printf '    %-20s %6s  %s%s%s' "${SECTION_NAMES[$i]}" "$(fmt_secs "$s")" "$CYAN" "$(repeat "$G_BAR" "$bar")" "$RESET")"
     fi
     i=$((i + 1))
   done
 fi
 
 emit ''
-emit "  ${BOLD}Still yours to do$RESET $DIM(details under Manual steps in README.md)$RESET"
+emit "  ${BOLD}Still yours to do$RESET $DIM(see Manual steps in the README)$RESET"
 if [ "$NEW_SSH_KEY" = 1 ]; then
-  todo "add the new key to GitHub: ${DIM}gh ssh-key add ~/.ssh/github.pub${RESET} (after gh auth login)"
+  todo "add the new SSH key to GitHub: ${DIM}gh ssh-key add ~/.ssh/github.pub${RESET}"
 fi
 if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
   ok "GitHub CLI signed in"
@@ -863,7 +878,7 @@ fi
 if command -v bcomp >/dev/null 2>&1; then
   ok "Beyond Compare command line tools installed"
 else
-  todo "Beyond Compare > Install Command Line Tools (git diff and merge need bcomp)"
+  todo "Beyond Compare > Install Command Line Tools (for git diff)"
 fi
 if [ "$(defaults read com.apple.universalaccess mouseDriverCursorSize 2>/dev/null)" = 2 ]; then
   ok "pointer size set"
@@ -872,7 +887,7 @@ else
 fi
 [ -f "$HOME/.p10k.zsh" ] || todo "run ${DIM}p10k configure${RESET} in a new terminal"
 todo "drag ~/Code into the Finder sidebar"
-todo "1Password, iTerm key mappings and Rider settings, as listed in the README"
+todo "1Password, iTerm key mappings, Rider settings"
 emit ''
 info "open a new terminal to pick up the shell changes"
 emit ''
