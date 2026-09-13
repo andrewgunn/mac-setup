@@ -9,9 +9,8 @@ with the reason why.
 1. Clone this repo into `~/Code`. On a fresh Mac, `git` first triggers the
    Command Line Tools dialog: accept it, wait, then clone
 1. Run `./run.sh` from a real terminal (not an editor or agent shell: sudo
-   needs one to prompt on). It asks for your password once, whether the App
-   Store is signed in (Xcode comes from there), your git name and
-   email, an SSH key passphrase, and whether to sign in to GitHub
+   needs one to prompt on). It asks for your password once, your git name
+   and email, an SSH key passphrase, and whether to sign in to GitHub
 1. Open a new terminal and work through the [manual steps](#manual-steps)
 
 Safe to re-run: every step is idempotent, prompts are skipped once answered,
@@ -30,8 +29,9 @@ over two minutes also ring the bell and post a notification.
 
 ### What it does
 
-- Rosetta 2, Homebrew, and everything in the `Brewfile`: formulae, casks and
-  App Store apps. Puts `brew` on the PATH of new shells
+- Rosetta 2, Homebrew, and everything in the `Brewfile`. Puts `brew` on the
+  PATH of new shells. Xcode is deliberately left out (only MAUI builds for
+  iOS or macOS need it); the `Brewfile` has the line to uncomment
 - A LaunchAgent that upgrades Homebrew packages in the background, leaving
   self-updating apps and `.pkg` installers alone ([details](#homebrew))
 - Reinstalls the Command Line Tools if they have no package receipt
