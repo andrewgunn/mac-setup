@@ -17,8 +17,19 @@ can't be, each with the reason why.
 1. Open a new terminal and work through the [Manual steps](#manual-steps)
 
 `run.sh` is safe to re-run. Every step is idempotent, it only prompts for input
-it doesn't already have, and it prints a summary of failed steps at the end
-rather than stopping at the first one.
+it doesn't already have, and it keeps going past failures, listing them at the
+end rather than stopping at the first one.
+
+While it runs, each step shows a spinner with the last few lines of its output
+underneath, then folds into a single tick (or cross) with the time it took.
+Settings report what actually changed, so a re-run reads as "all already set".
+Long or interactive steps (Homebrew downloads, the sudo prompt, `ssh-keygen`)
+stay live. It ends with a summary, a chart of where the time went, a checklist
+of what's still manual, and a desktop notification. Flags:
+
+- `./run.sh -v` streams every step's output instead of folding it
+- `NO_COLOR=1 ./run.sh`, or piping the output, switches to plain ASCII
+- everything is also written to `~/Library/Logs/mac-setup/<timestamp>.log`
 
 ### What it does
 
