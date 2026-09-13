@@ -61,7 +61,6 @@ SECTION_SECS=()
 SECTION_START=$SECONDS
 CURRENT_SECTION=''
 INSTALLED_COUNT=0
-NEW_SSH_KEY=0
 
 emit() { printf '%s\n' "$*"; printf '%s\n' "$*" >> "$LOG"; }
 fmt_secs() {   # 125 -> "2m 5s"
@@ -78,8 +77,8 @@ todo() { emit "  $YELLOW$G_TODO$RESET $*"; }
 fail() { emit "  $RED$G_FAIL $*$RESET"; FAILED+=("$*"); }
 ask()  { printf '  %s?%s %s' "$CYAN" "$RESET" "$1"; }   # ask <prompt>; then read
 
-# Section headers: a titled rule with the section counter, and the per-section
-# time is recorded for the chart at the end.
+# Section headers: the title with the section counter beside it. The time each
+# section takes is recorded for the chart at the end.
 close_section() {
   if [ -n "$CURRENT_SECTION" ]; then
     SECTION_NAMES+=("$CURRENT_SECTION")
@@ -91,12 +90,8 @@ section() {
   CURRENT_SECTION="$1"
   SECTION_START=$SECONDS
   SECTION_N=$((SECTION_N + 1))
-  measure
-  local counter="$SECTION_N/$SECTION_TOTAL"
-  local n=$((COLS - ${#1} - ${#counter} - 6))
-  [ "$n" -lt 2 ] && n=2
   emit ''
-  emit "$DIM$G_RULE$G_RULE$RESET $BOLD$1$RESET $DIM$(repeat "$G_RULE" "$n") $counter$RESET"
+  emit "$BOLD$1$RESET $DIM$SECTION_N/$SECTION_TOTAL$RESET"
   set_title "$1"
 }
 
@@ -211,9 +206,9 @@ pref() {
 prefs_done() {
   local n=${#PREF_CHANGED[@]}
   if [ "$n" -eq 0 ]; then
-    ok "$1 $DIM(all $PREF_TOTAL already set)$RESET"
+    ok "$1 ${DIM}· already set$RESET"
   else
-    ok "$1 $DIM($n of $PREF_TOTAL changed)$RESET"
+    ok "$1 ${DIM}· $n changed$RESET"
     local c; for c in "${PREF_CHANGED[@]}"; do info "$c"; done
   fi
   PREF_TOTAL=0
@@ -806,16 +801,15 @@ else
 fi
 
 # ==============================================================================
-# GitHub SSH key
+# GitHub: SSH key, CLI sign-in, key upload
 # ==============================================================================
-section "GitHub SSH"
+section "GitHub"
 mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
 if [ -f "$HOME/.ssh/github" ]; then
   ok "key exists: ${HOME/#$HOME/~}/.ssh/github"
 else
   info "generating an ed25519 key; choose a passphrase when asked"
   step -i "Generate the GitHub SSH key" ssh-keygen -t ed25519 -C github -f "$HOME/.ssh/github"
-  NEW_SSH_KEY=1
 fi
 append_block_once "$HOME/.ssh/config" 'IdentityFile ~/.ssh/github' <<'SSHCONFIG'
 Host *
@@ -828,6 +822,37 @@ if ssh-add --apple-use-keychain "$HOME/.ssh/github" 2>/dev/null; then
   ok "key loaded into the agent and keychain"
 else
   warn "key not added to the agent; later: ssh-add --apple-use-keychain ~/.ssh/github"
+fi
+
+# The browser OAuth flow can't be scripted, but it can be started from here so
+# it isn't left as homework. The key is uploaded once signed in, unless the
+# account already has it.
+GH_USER=''
+if command -v gh >/dev/null 2>&1; then
+  if gh auth status >/dev/null 2>&1; then
+    GH_USER=$(gh api user -q .login 2>/dev/null)
+    ok "GitHub CLI signed in as ${GH_USER:-?}"
+  else
+    ask "Sign in to GitHub in the browser now? [Y/n] "; read -r reply
+    case "$reply" in
+      n|N|no|NO) info "skipped; later: gh auth login" ;;
+      *)
+        if step -i "gh auth login" gh auth login --hostname github.com --git-protocol ssh --web --skip-ssh-key; then
+          GH_USER=$(gh api user -q .login 2>/dev/null)
+        fi
+        ;;
+    esac
+  fi
+  if [ -n "$GH_USER" ] && [ -f "$HOME/.ssh/github.pub" ]; then
+    KEY_BODY=$(awk '{ print $2 }' "$HOME/.ssh/github.pub")
+    if gh ssh-key list 2>/dev/null | grep -qF "$KEY_BODY"; then
+      ok "this key is on the $GH_USER account"
+    else
+      step "Upload the key to GitHub" gh ssh-key add "$HOME/.ssh/github.pub" --title "$(scutil --get ComputerName 2>/dev/null || hostname)"
+    fi
+  fi
+else
+  info "gh not on PATH; sign in later with gh auth login"
 fi
 close_section
 
@@ -878,13 +903,10 @@ fi
 
 emit ''
 emit "  ${BOLD}Still yours to do$RESET $DIM(see Manual steps in the README)$RESET"
-if [ "$NEW_SSH_KEY" = 1 ]; then
-  todo "add the new SSH key to GitHub: ${DIM}gh ssh-key add ~/.ssh/github.pub${RESET}"
-fi
-if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
-  ok "GitHub CLI signed in"
+if [ -n "$GH_USER" ]; then
+  ok "GitHub: signed in as $GH_USER, SSH key on the account"
 else
-  todo "sign in to GitHub: ${DIM}gh auth login${RESET}"
+  todo "sign in to GitHub and upload the key: ${DIM}gh auth login && gh ssh-key add ~/.ssh/github.pub${RESET}"
 fi
 if command -v bcomp >/dev/null 2>&1; then
   ok "Beyond Compare command line tools installed"
@@ -903,7 +925,14 @@ emit ''
 info "open a new terminal to pick up the shell changes"
 emit ''
 
-# A nudge for anyone who wandered off during the downloads.
+# A nudge for anyone who wandered off during the downloads. Sending the
+# notification via the terminal app makes it carry that app's icon instead of
+# Script Editor's, which is what a bare osascript notification gets.
 [ "$TTY" = 1 ] && printf '\a'
-osascript -e "display notification \"$SUMMARY\" with title \"mac-setup\"" 2>/dev/null
+case "${TERM_PROGRAM:-}" in
+  iTerm.app) NOTIFIER='tell application "iTerm2" to ' ;;
+  Apple_Terminal) NOTIFIER='tell application "Terminal" to ' ;;
+  *) NOTIFIER='' ;;
+esac
+osascript -e "${NOTIFIER}display notification \"$SUMMARY\" with title \"mac-setup\"" 2>/dev/null
 exit 0

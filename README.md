@@ -22,7 +22,7 @@ then folds into one tick or cross with the time taken. Settings report what
 actually changed, so a re-run reads "all already set". Long or interactive
 steps (downloads, sudo, `ssh-keygen`) stay live. It ends with a summary, a
 chart of where the time went, a checklist of what's still manual, and a
-notification.
+notification from your terminal app.
 
 - `./run.sh -v` streams every step's output instead of folding it
 - `NO_COLOR=1`, or piping the output, switches to plain ASCII
@@ -44,7 +44,8 @@ notification.
   click, auto-hiding Dock, screenshots to Downloads, no auto-capitalisation
 - Rectangle shortcuts, Stats, SmoothScroll and iTerm preferences
 - VS Code and Cursor extensions
-- A GitHub SSH key, added to the agent and keychain
+- A GitHub SSH key added to the agent and keychain, `gh auth login` in the
+  browser, and the key uploaded to the account
 
 Maintenance lives in `Taskfile.yml`: `task lint` (the CI checks),
 `task check` (is the `Brewfile` fully installed?), `task drift` (what's on this
@@ -114,8 +115,8 @@ machine, which would abandon the rest of the script.
 
 - **`task drift`**, and fold anything you want to keep into the repo
 - **`~/Code`**: everything pushed, no uncommitted work
-- **SSH**: the new machine gets a new `~/.ssh/github` key. Add it to GitHub,
-  remove the old one, and copy any other keys by hand
+- **SSH**: the new machine gets a new `~/.ssh/github` key, which `run.sh`
+  uploads to GitHub. Remove the old one there, and copy any other keys by hand
 - **Licences**: SmoothScroll (kept out of the repo), Beyond Compare, Rider,
   Bambu Studio
 - **Sign-ins** happen through each app: 1Password, Slack, Chrome, Google
@@ -129,12 +130,6 @@ machine, which would abandon the rest of the script.
 Each of these resisted automation for a stated reason. If the reason stops
 being true, move it into `run.sh`. The end of a run lists them, ticking the
 ones it can detect.
-
-### GitHub
-
-`gh auth login`, then `gh ssh-key add ~/.ssh/github.pub` on a new machine. The
-key, `~/.ssh/config` and the keychain entry are already done; the browser OAuth
-flow can't be scripted.
 
 ### Finder sidebar
 
