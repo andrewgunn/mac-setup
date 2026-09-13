@@ -10,7 +10,7 @@ with the reason why.
    Command Line Tools dialog: accept it, wait, then clone
 1. Run `./run.sh` from a real terminal (not an editor or agent shell: sudo
    needs one to prompt on). It asks for your password once, whether the App
-   Store is signed in (Numbers and Xcode come from there), your git name and
+   Store is signed in (Xcode comes from there), your git name and
    email, an SSH key passphrase, and whether to sign in to GitHub
 1. Open a new terminal and work through the [manual steps](#manual-steps)
 

@@ -76,5 +76,4 @@ cask 'wifiman'
 cask 'wispr-flow'
 
 # Mac App Store (needs `mas`, above, and an App Store sign-in)
-mas 'Numbers', id: 361304891
 mas 'Xcode', id: 497799835
