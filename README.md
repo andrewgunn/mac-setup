@@ -10,8 +10,10 @@ can't be, each with the reason why.
    need it)
 1. Clone this repository into `~/Code`. On a fresh Mac the `git` command
    triggers the Command Line Tools install dialog; accept it, wait, then clone
-1. Run `./run.sh`. It asks for your password (Homebrew and the .NET SDK
-   installer), your git name and email, and an SSH key passphrase
+1. Run `./run.sh` from a normal terminal, not from inside an editor or agent
+   shell: it asks for your password (Homebrew and the `.pkg` casks), your git
+   name and email, and an SSH key passphrase, and sudo needs a real terminal
+   to prompt on
 1. Open a new terminal and work through the [Manual steps](#manual-steps)
 
 `run.sh` is safe to re-run. Every step is idempotent, it only prompts for input
