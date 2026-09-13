@@ -6,6 +6,11 @@ set -uo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FAILED=()
 
+# This script is interactive, so sudo should prompt in the terminal. A stale
+# askpass helper in the environment (the old autoupdate tap left one behind)
+# makes every sudo fail with "no password was provided" instead.
+unset SUDO_ASKPASS
+
 # Run a step, but keep going if it fails — a missing cask shouldn't abandon the
 # rest of the setup. Anything that failed is listed again at the end.
 step() {
