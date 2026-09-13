@@ -1,246 +1,184 @@
 # Mac Setup
 
-Sets up a Mac the way I like it. `run.sh` does everything that can be scripted;
-the [Manual steps](#manual-steps) at the bottom are the things that genuinely
-can't be, each with the reason why.
+Sets up a Mac the way I like it. `run.sh` does everything that can be scripted.
+The [manual steps](#manual-steps) at the end are what genuinely can't be, each
+with the reason why.
 
 ## Getting started
 
-1. Sign in to iCloud and the App Store (the `mas` entries in the `Brewfile`
-   need it)
-1. Clone this repository into `~/Code`. On a fresh Mac the `git` command
-   triggers the Command Line Tools install dialog; accept it, wait, then clone
-1. Run `./run.sh` from a normal terminal, not from inside an editor or agent
-   shell, because sudo needs a real terminal to prompt on. It asks for your
-   password once at the start and keeps the sudo ticket alive for the rest of
-   the run, then for your git name and email, and an SSH key passphrase
-1. Open a new terminal and work through the [Manual steps](#manual-steps)
+1. Sign in to iCloud and the App Store (the `mas` entries need it)
+1. Clone this repo into `~/Code`. On a fresh Mac, `git` first triggers the
+   Command Line Tools dialog: accept it, wait, then clone
+1. Run `./run.sh` from a real terminal (not an editor or agent shell: sudo
+   needs one to prompt on). It asks for your password once, then your git
+   name and email, then an SSH key passphrase
+1. Open a new terminal and work through the [manual steps](#manual-steps)
 
-`run.sh` is safe to re-run. Every step is idempotent, it only prompts for input
-it doesn't already have, and it keeps going past failures, listing them at the
-end rather than stopping at the first one.
+Safe to re-run: every step is idempotent, prompts are skipped once answered,
+and failures are collected and listed at the end rather than stopping the run.
 
-While it runs, each step shows a spinner with the last few lines of its output
-underneath, then folds into a single tick (or cross) with the time it took.
-Settings report what actually changed, so a re-run reads as "all already set".
-Long or interactive steps (Homebrew downloads, the sudo prompt, `ssh-keygen`)
-stay live. It ends with a summary, a chart of where the time went, a checklist
-of what's still manual, and a desktop notification. Flags:
+While it runs, each step shows a spinner with its last few lines of output,
+then folds into one tick or cross with the time taken. Settings report what
+actually changed, so a re-run reads "all already set". Long or interactive
+steps (downloads, sudo, `ssh-keygen`) stay live. It ends with a summary, a
+chart of where the time went, a checklist of what's still manual, and a
+notification.
 
 - `./run.sh -v` streams every step's output instead of folding it
-- `NO_COLOR=1 ./run.sh`, or piping the output, switches to plain ASCII
-- everything is also written to `~/Library/Logs/mac-setup/<timestamp>.log`
+- `NO_COLOR=1`, or piping the output, switches to plain ASCII
+- everything also goes to `~/Library/Logs/mac-setup/<timestamp>.log`
 
 ### What it does
 
-- Installs Rosetta 2, Homebrew, and everything in the `Brewfile` (formulae,
-  casks and App Store apps), and puts `brew` on the PATH of new shells
-- Installs a LaunchAgent that upgrades formulae and casks in the background,
-  leaving self-updating apps and root-installer casks alone
-- Reinstalls the Xcode Command Line Tools if they have no package receipt
-- Configures git from `config/gitconfig` (Beyond Compare as diff and merge
-  tool, `git lg`, prune on fetch) and installs the global ignore file
-- Installs the .NET global tools, Claude Code and Rokit
-- Sets up Oh My Zsh with zsh-syntax-highlighting, and installs the
-  powerlevel10k theme along with the finished `config/p10k.zsh`, so the
-  interactive `p10k configure` wizard never has to be run
-- Applies the system, Finder, Dock, trackpad and Spotlight defaults: dark
-  mode, list view, folders first, tap to click, auto-hiding Dock, screenshots
-  to Downloads, no auto-capitalisation
-- Creates `~/Code`
-- Configures Rectangle, Stats, SmoothScroll and iTerm
-- Installs the VS Code and Cursor extensions
-- Generates a GitHub SSH key and adds it to the keychain
+- Rosetta 2, Homebrew, and everything in the `Brewfile`: formulae, casks and
+  App Store apps. Puts `brew` on the PATH of new shells
+- A LaunchAgent that upgrades Homebrew packages in the background, leaving
+  self-updating apps and `.pkg` installers alone ([details](#homebrew))
+- Reinstalls the Command Line Tools if they have no package receipt
+- Git from `config/gitconfig` (Beyond Compare as diff and merge tool,
+  `git lg`, prune on fetch) plus the global ignore file
+- .NET global tools, Claude Code, Rokit
+- Oh My Zsh with zsh-syntax-highlighting and powerlevel10k, using the finished
+  `config/p10k.zsh` so the `p10k configure` wizard never runs
+- System defaults: dark mode, Finder list view with folders first, tap to
+  click, auto-hiding Dock, screenshots to Downloads, no auto-capitalisation
+- Rectangle shortcuts, Stats, SmoothScroll and iTerm preferences
+- VS Code and Cursor extensions
+- A GitHub SSH key, added to the agent and keychain
 
-`Taskfile.yml` has the maintenance jobs: `task lint` runs the CI checks,
-`task check` confirms the `Brewfile` is fully installed, `task drift` lists
-what's on this Mac but not in the repo, and `task autoupdate-status` shows the
-background upgrade agent.
+Maintenance lives in `Taskfile.yml`: `task lint` (the CI checks),
+`task check` (is the `Brewfile` fully installed?), `task drift` (what's on this
+Mac but not in the repo?) and `task autoupdate-status`.
 
 ## Homebrew
 
-`run.sh` installs a LaunchAgent, `com.andrewgunn.brew-autoupdate`, that runs
-`config/brew-autoupdate.sh` every 12 hours and at login. Each run does
-`brew update`, `brew upgrade --formula`, `brew upgrade --cask` and
-`brew cleanup`, with two deliberate exceptions:
+A LaunchAgent, `com.andrewgunn.brew-autoupdate`, runs
+`config/brew-autoupdate.sh` every 12 hours and at login: `brew update`,
+`brew upgrade --formula`, `brew upgrade --cask`, `brew cleanup`. Two things are
+deliberately skipped:
 
-- **Casks that update themselves** (`auto_updates true`: Chrome, iTerm,
-  Claude, 1Password, Cursor, Slack, Docker Desktop, and most of the rest of the
-  `Brewfile`) are left alone. Homebrew 6 changed the default so `brew upgrade`
-  replaces these whenever the cask is ahead of the installed app, and it does
-  that by quitting the running app. The script sets
-  `HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS` to restore the old behaviour; the
-  apps update themselves in their own time. `brew outdated --cask --greedy`
-  shows what brew would have done.
-- **Casks whose installer is a `.pkg`** (`SUDO_CASKS` in the script:
-  `dotnet-sdk`, `naps2`, `wifiman`) are skipped, because they need root and a
-  launchd job has nowhere to ask for a password. `run.sh` upgrades them
-  instead, while you're at the keyboard. When adding a cask, check
-  `brew info --cask <name>` for a `Pkg` artifact and add it to the list.
-  Note that the .NET SDK upgrade uninstalls every `com.microsoft.dotnet.*`
-  package first, including older runtimes.
+- **Self-updating casks** (`auto_updates true`: Chrome, iTerm, Claude,
+  1Password, Cursor, Slack, Docker Desktop and most of the `Brewfile`).
+  Homebrew 6 upgrades these by default whenever the cask is ahead of the app,
+  quitting the running app to do it. `HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS`
+  restores the old behaviour and the apps update themselves.
+- **`.pkg` casks** (`SUDO_CASKS` in the script: `dotnet-sdk`, `naps2`,
+  `wifiman`). They need root, and a launchd job has nowhere to ask for a
+  password, so `run.sh` upgrades them while you're at the keyboard. CI fails if
+  a `.pkg` cask is added without joining that list. Note the .NET SDK upgrade
+  removes every `com.microsoft.dotnet.*` package first, older runtimes included.
 
-This replaced the [domt4/autoupdate](https://github.com/DomT4/homebrew-autoupdate)
-tap. That tap has no way to pass the environment variable above, and its
-`--sudo` mode (a `pinentry-mac` password dialog with a 60-second timeout) was
-the source of the background password prompts. `run.sh` removes the tap and its
-agent if they're still installed.
-
-Useful commands:
+This replaced the domt4/autoupdate tap, which couldn't set that variable and
+whose `--sudo` password dialog was the source of the background prompts.
+`run.sh` removes the tap if it's still installed.
 
 ```
-launchctl print gui/$UID/com.andrewgunn.brew-autoupdate   # state, run count, last exit code
-tail -f ~/Library/Logs/brew-autoupdate.log                # watch a run, or see why one failed
-launchctl kickstart gui/$UID/com.andrewgunn.brew-autoupdate   # run now
+task autoupdate-status                                          # state, last exit, recent log
+launchctl kickstart gui/$UID/com.andrewgunn.brew-autoupdate     # run now
+tail -f ~/Library/Logs/brew-autoupdate.log
 ```
 
-A failed run turns into a yellow warning the next time a login shell starts
-(`~/.zprofile` reads the last exit status from launchd). The script also posts
-a notification, but launchd jobs aren't guaranteed notification permission, so
-don't rely on it.
+A failed run prints a yellow warning at the next login shell (`~/.zprofile`
+reads launchd's last exit status). It also posts a notification, but launchd
+jobs aren't guaranteed permission for that, so don't rely on it.
 
-To keep the `Brewfile` honest, `task drift` lists top-level formulae, casks,
-.NET tools and VS Code extensions that are installed but not in the repo. Add
-what you want to keep, uninstall the rest by name. The `Brewfile` has a few
-commented-out entries (`pyenv`, `poetry`, `ta-lib`, `mongodb-atlas-cli`): those
-are deliberately not installed on a new machine, so `drift` will keep listing
-them until they're uninstalled here.
-
-Avoid `brew bundle cleanup --force`. It proposes removing everything not
-required by the `Brewfile`, which includes the dependencies of anything
-installed manually outside it, so `libpng`, `freetype` and friends show up as
-removable.
+`task drift` keeps the `Brewfile` honest: it lists formulae, casks, .NET tools
+and VS Code extensions that are installed but not in the repo. The commented-out
+entries (`pyenv`, `poetry`, `ta-lib`, `mongodb-atlas-cli`) are deliberately not
+installed on a new machine, so `drift` lists them until they're uninstalled
+here. Avoid `brew bundle cleanup --force`: it also removes the dependencies of
+anything installed outside the `Brewfile`.
 
 ## Command Line Tools
 
-`brew doctor` may report "A newer Command Line Tools release is available" while
-System Settings > Software Update shows nothing to install. That usually means
-the CLT install has no package receipt:
+If `brew doctor` says a newer Command Line Tools release is available while
+Software Update shows nothing, the install probably has no package receipt:
 
 ```
 pkgutil --pkg-info=com.apple.pkg.CLTools_Executables
 ```
 
-If that says "No receipt", Software Update has no record of CLT and cannot
-update it, no matter what your update settings say.
+Without a receipt Software Update can't see them and never updates them.
+`run.sh` handles this: no receipt means it removes the directory and reinstalls
+headlessly through `softwareupdate` (about 1GB); with a receipt the step is a
+no-op. After that they update with everything else, governed by the settings in
+`defaults read /Library/Preferences/com.apple.SoftwareUpdate`, which should all
+be enabled.
 
-`run.sh` detects and fixes this: when the directory exists but has no receipt it
-removes it and reinstalls headlessly via `softwareupdate`, which needs sudo and
-downloads roughly 1GB. When the receipt is present the whole step is skipped, so
-re-running costs nothing.
-
-After that it's maintained by Software Update along with everything else. There
-is no separate auto-update toggle for CLT — it rides the system settings below,
-all of which are on by default and worth confirming with:
-
-```
-defaults read /Library/Preferences/com.apple.SoftwareUpdate
-```
-
-`AutomaticCheckEnabled`, `AutomaticDownload`, `AutomaticallyInstallMacOSUpdates`,
-`ConfigDataInstall` and `CriticalUpdateInstall` should all be enabled.
-
-macOS releases themselves are deliberately left out of `run.sh`. Installing one
-reboots the machine, which would abandon the rest of the script, so never
-automate `softwareupdate --install --all`. Let the settings above install them,
-and check Software Update by hand if one appears stuck.
+macOS releases are deliberately not installed by `run.sh`: they reboot the
+machine, which would abandon the rest of the script.
 
 ## Before wiping this Mac
 
-`run.sh` recreates the software and settings. It does not recreate data, and a
-few things live outside this repo on purpose. Check each before erasing:
+`run.sh` recreates software and settings, not data. Check before erasing:
 
-- **Run `task drift`** and fold anything you want to keep into the repo
-- **`~/Code`**: every repo pushed, no uncommitted work (`git status` in each)
-- **SSH**: `run.sh` generates a new `~/.ssh/github` key on the new machine.
-  Add it to GitHub afterwards and remove the old one. Copy any other keys in
-  `~/.ssh` by hand if you still need them
-- **Licences**: SmoothScroll (kept out of the repo deliberately), Beyond
-  Compare, Rider (JetBrains account), Bambu Studio account
-- **Signed-in apps** re-authenticate through their own flows: 1Password, Slack,
-  Chrome profiles, Google Drive, Docker, `gh auth login`, `az login`, Claude
-- **Claude Code**: `~/.claude` holds settings, memory and project notes. Copy
-  it across if you want them back
-- **Ollama models** in `~/.ollama` are large and re-downloadable; skip them
-- **iTerm** keyboard mappings and **Rider** settings are manual steps below;
-  Rider can also restore from JetBrains settings sync
-- **Anything in `~/Downloads`**, since Finder and screenshots both default
-  there
+- **`task drift`**, and fold anything you want to keep into the repo
+- **`~/Code`**: everything pushed, no uncommitted work
+- **SSH**: the new machine gets a new `~/.ssh/github` key. Add it to GitHub,
+  remove the old one, and copy any other keys by hand
+- **Licences**: SmoothScroll (kept out of the repo), Beyond Compare, Rider,
+  Bambu Studio
+- **Sign-ins** happen through each app: 1Password, Slack, Chrome, Google
+  Drive, Docker, `gh auth login`, `az login`, Claude
+- **`~/.claude`** holds Claude Code settings, memory and project notes
+- **`~/.ollama`** models are large and re-downloadable; skip them
+- **`~/Downloads`**, since Finder and screenshots both land there
 
 ## Manual steps
 
-Everything below resisted automation for a stated reason. If a reason stops
-being true, move the step into `run.sh`.
-
-### Finder sidebar
-
-Add `~/Code` to the Finder sidebar by dragging it there. `run.sh` creates the
-directory, but there's no maintained CLI for sidebar favourites — `mysides` was
-the only real option and homebrew-cask disabled it on 2025-10-13.
+Each of these resisted automation for a stated reason. If the reason stops
+being true, move it into `run.sh`. The end of a run lists them, ticking the
+ones it can detect.
 
 ### GitHub
 
-Run `gh auth login`. `run.sh` has already generated `~/.ssh/github`, written
-`~/.ssh/config` and added the key to the keychain — this step is the browser
-OAuth flow, which can't be scripted.
+`gh auth login`, then `gh ssh-key add ~/.ssh/github.pub` on a new machine. The
+key, `~/.ssh/config` and the keychain entry are already done; the browser OAuth
+flow can't be scripted.
+
+### Finder sidebar
+
+Drag `~/Code` into the sidebar. There's no maintained CLI for sidebar items:
+`mysides` was the only option and homebrew-cask disabled it on 2025-10-13.
 
 ### 1Password
 
-Its preferences aren't exposed through `defaults` (the domain holds only generic
-Cocoa keys), so these have to be clicked:
-
-1. Open 1Password
-    1. Go to Settings
-    1. Go to General
-        1. Disable `Keep 1Password in the menu bar`
-        1. Disable the `Show 1Password` shortcut
-        1. Change the `Show Quick Access` shortcut to ⇧⌘P
+Its preferences aren't exposed through `defaults`, so in Settings > General:
+disable `Keep 1Password in the menu bar`, disable the `Show 1Password`
+shortcut, and set `Show Quick Access` to ⇧⌘P.
 
 ### iTerm
 
-`run.sh` sets the closing, fullscreen and dimming preferences, and the Fira Code
-18 font with ligatures. The rest live deep inside the profile's keyboard map,
-where scripted edits are fragile enough not to be worth it:
+`run.sh` sets the quit, fullscreen and dimming preferences and the Fira Code 18
+font with ligatures. The rest live in the profile's keyboard map, where scripted
+edits are too fragile to be worth it. In Settings > Profiles:
 
-1. Open iTerm
-    1. Go to Settings > Profiles
-        1. Go to General
-            1. Set split plane directory to current directory `Working Directory > Advanced Configuration > Edit > Working Directory for New Split Panes > Reuse previous session's directory`
-        1. Go to Window
-            1. Set screen to `Settings for New Windows > Screen > Main Screen`
-        1. Go to Keys > Key Mappings
-            1. Load natural text editing key mappings `Presets... > Natural Text Editing`
-            1. Add a new key mapping `+`
-            1. Send Hex Codes with the code `0x1B 0x08`
+1. General > Working Directory > Advanced Configuration > Edit: set
+   `Working Directory for New Split Panes` to `Reuse previous session's directory`
+1. Window > Settings for New Windows > Screen: `Main Screen`
+1. Keys > Key Mappings: `Presets… > Natural Text Editing`, then add a mapping
+   that sends the hex codes `0x1B 0x08`
 
-Note that iTerm rewrites its plist on quit, so `run.sh` skips this section
-entirely if iTerm is running. Run it from Terminal.app for a clean first setup.
+iTerm rewrites its plist on quit, so `run.sh` skips this section while iTerm is
+running. Use Terminal.app for a first setup.
 
 ### Rider
 
-Signing in is interactive, and the editor settings live in version-numbered
-config directories that move with each release:
-
-1. Open Rider
-    1. Sign in with your JetBrains account `License` / `JetBrains Account`
-    1. Go to Settings
-        1. Go to Editor > Font
-            1. Change the font to Fira Code
-            1. Enable ligatures `Enable ligatures`
-        1. Go to Version Control > Git
-            1. Set SSH executable to `Native`
+Signing in is interactive and the settings live in version-numbered directories
+that move with each release. Sign in with the JetBrains account, then in
+Settings: Editor > Font to Fira Code with ligatures, and Version Control > Git
+SSH executable to `Native`. JetBrains settings sync can restore the rest.
 
 ### Pointer size
 
-`run.sh` attempts this, but `com.apple.universalaccess` is protected by TCC and
-the write silently fails unless your terminal has Full Disk Access. If the
-pointer is still small, set it in System Settings > Accessibility > Display.
+`run.sh` writes it, but `com.apple.universalaccess` is protected and the write
+silently fails unless the terminal has Full Disk Access. If the pointer is still
+small: System Settings > Accessibility > Display.
 
 ### SmoothScroll licence
 
-Kept outside this repo deliberately — the repo is public, and the licence keys
-and subscription ID live in `com.galambalazs.SmoothScroll`. `run.sh` writes only
-the two behavioural keys and never reads or touches the licence.
+The repo is public and the licence lives in `com.galambalazs.SmoothScroll`, so
+`run.sh` writes only the three behavioural keys and never touches it.
 
 ## References
 
