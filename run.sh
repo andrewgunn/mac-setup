@@ -714,7 +714,7 @@ else
   pref com.googlecode.iterm2 UseLionStyleFullscreen -bool false
   pref com.googlecode.iterm2 ShowFullScreenTabBar -bool false
   pref com.googlecode.iterm2 DimInactiveSplitPanes -bool false
-  prefs_done "iTerm: no quit prompt, non-native fullscreen, no pane dimming"
+  prefs_done "iTerm: no quit prompt, own fullscreen, no pane dimming"
 
   # Font and ligatures live inside the profile dict, so edit the plist directly,
   # locating the default profile by its GUID rather than assuming index 0.
