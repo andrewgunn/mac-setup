@@ -1,0 +1,4 @@
+# Global git ignores. run.sh installs this as ~/.config/git/ignore, which git
+# reads without any core.excludesFile setting.
+**/.claude/settings.local.json
+.DS_Store

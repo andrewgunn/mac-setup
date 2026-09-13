@@ -50,15 +50,37 @@ chflags nohidden ~/Library
 defaults write com.apple.finder AppleShowAllFiles YES
 defaults write com.apple.finder ShowPathbar -bool true
 defaults write com.apple.finder ShowStatusBar -bool true
+defaults write com.apple.finder FXPreferredViewStyle -string 'Nlsv'   # list view
+defaults write com.apple.finder _FXSortFoldersFirst -bool true
+defaults write com.apple.finder FXDefaultSearchScope -string 'SCcf'   # search the current folder
+defaults write com.apple.finder ShowExternalHardDrivesOnDesktop -bool true
 # Open new Finder windows in Downloads
 defaults write com.apple.finder NewWindowTarget -string 'PfLo'
 defaults write com.apple.finder NewWindowTargetPath -string "file://$HOME/Downloads/"
+# Screenshots go to Downloads too, not the Desktop
+defaults write com.apple.screencapture location -string "$HOME/Downloads"
 # Finder and Dock are restarted at the very end, not here: relaunching Finder
 # opens a window that steals keyboard focus, and doing that before the sudo
 # prompt below swallows part of the password being typed.
 
-# Show/hide the Dock instantly
+# Auto-hide the Dock, show/hide it instantly, no recent apps, slightly smaller
+defaults write com.apple.dock autohide -bool true
 defaults write com.apple.dock autohide-time-modifier -int 0
+defaults write com.apple.dock show-recents -bool false
+defaults write com.apple.dock tilesize -int 52
+
+# System: dark mode, always show scroll bars, show file extensions, and stop
+# macOS rewriting what's typed. Dark mode takes effect at the next login.
+defaults write NSGlobalDomain AppleInterfaceStyle -string 'Dark'
+defaults write NSGlobalDomain AppleShowScrollBars -string 'Always'
+defaults write NSGlobalDomain AppleShowAllExtensions -bool true
+defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
+defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
+
+# Trackpad: tap to click (all three keys are needed for it to stick everywhere)
+defaults write com.apple.AppleMultitouchTrackpad Clicking -bool true
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
+defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
 
 # Keep Spotlight out of the menu bar (Cmd-Space still works)
 defaults -currentHost write com.apple.Spotlight MenuItemHidden -int 1
@@ -128,6 +150,15 @@ if ! command -v brew >/dev/null 2>&1; then
   exit 1
 fi
 
+# The Homebrew installer prints this line but doesn't add it; without it, new
+# terminals on a fresh Mac have no `brew` on PATH.
+append_once ~/.zprofile 'brew shellenv' "eval \"\$($(command -v brew) shellenv)\""
+
+# Some casks (Steam, for one) are Intel-only and need Rosetta on Apple Silicon.
+if [ "$(uname -m)" = arm64 ] && ! pgrep -q oahd; then
+  step "Install Rosetta 2" softwareupdate --install-rosetta --agree-to-license
+fi
+
 step "brew update" brew update
 step "brew upgrade" brew upgrade --formula
 step "brew bundle" brew bundle --file="$REPO_DIR/Brewfile" --no-upgrade
@@ -135,9 +166,14 @@ step "brew bundle" brew bundle --file="$REPO_DIR/Brewfile" --no-upgrade
 # launchd job has nowhere to ask for a password), so upgrade them here, where
 # someone is at the keyboard. The list lives in config/brew-autoupdate.sh; the
 # other casks are the background updater's job.
-SUDO_CASKS=$("$REPO_DIR/config/brew-autoupdate.sh" --print-sudo-casks)
-# shellcheck disable=SC2086  # word-splitting the list is the point
-step "brew upgrade sudo casks" brew upgrade --cask $SUDO_CASKS
+SUDO_CASKS=()
+for cask in $("$REPO_DIR/config/brew-autoupdate.sh" --print-sudo-casks); do
+  # Only the ones that are installed: bundle may have just failed to add one.
+  [ -d "$(brew --caskroom)/$cask" ] && SUDO_CASKS+=("$cask")
+done
+if [ ${#SUDO_CASKS[@]} -gt 0 ]; then
+  step "brew upgrade sudo casks" brew upgrade --cask "${SUDO_CASKS[@]}"
+fi
 
 # ------------------------------------------------------------------------------
 # Homebrew background upgrades
@@ -232,17 +268,22 @@ if [ -z "$(git config --global user.email || true)" ]; then
   read -rp "Enter your git email address: " git_email_address
   git config --global user.email "$git_email_address"
 fi
-git config --global init.defaultBranch main
-git config --global pull.rebase false
-# Beyond Compare. Requires its CLI tools: open Beyond Compare and choose
-# Install Command Line Tools from the app menu (installs `bcomp`).
-git config --global diff.tool bc
-git config --global difftool.bc.trustExitCode true
-git config --global difftool.prompt false
-git config --global merge.tool bc
-git config --global mergetool.bc.trustExitCode true
-git config --global mergetool.keepBackup false
-git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+# Everything except the identity lives in config/gitconfig and is pulled in by
+# reference, so editing the repo file is enough. Settings this script used to
+# write directly into ~/.gitconfig would shadow the include, so drop them.
+git config --global include.path "$REPO_DIR/config/gitconfig"
+for key in init.defaultBranch pull.rebase fetch.prune alias.lg diff.tool difftool.prompt \
+           difftool.bc.trustExitCode merge.tool mergetool.keepBackup mergetool.bc.trustExitCode; do
+  git config --file ~/.gitconfig --unset-all "$key" 2>/dev/null || true
+done
+git config --global --includes --get init.defaultBranch >/dev/null ||
+  { echo "!!! config/gitconfig is not being read"; FAILED+=("git include.path"); }
+# ~/.config/git/ignore is read by git with no further configuration.
+mkdir -p ~/.config/git
+while IFS= read -r line; do
+  case "$line" in ''|'#'*) continue ;; esac
+  append_once ~/.config/git/ignore "^$(printf '%s' "$line" | sed 's/[.*[\]/\\&/g')\$" "$line"
+done < "$REPO_DIR/config/gitignore"
 
 # ------------------------------------------------------------------------------
 # .NET
@@ -252,9 +293,10 @@ if command -v dotnet >/dev/null 2>&1; then
   echo "==> .NET"
   step "dotnet dev-certs" dotnet dev-certs https --trust
   step "Aspire templates" dotnet new install Aspire.ProjectTemplates --force
-  step "dotnet-ef" dotnet tool update --global dotnet-ef
-  step "dotnet-reportgenerator" dotnet tool update --global dotnet-reportgenerator-globaltool
-  step "Verify.Tool" dotnet tool update --global Verify.Tool
+  for tool in dotnet-ef dotnet-reportgenerator-globaltool dotnet-sonarscanner \
+              ilspycmd Microsoft.Playwright.CLI Verify.Tool; do
+    step "$tool" dotnet tool update --global "$tool"
+  done
   # shellcheck disable=SC2016  # $HOME is deliberately written literally
   append_once ~/.zprofile '\.dotnet/tools' 'export PATH="$PATH:$HOME/.dotnet/tools"'
 else
@@ -409,16 +451,71 @@ else
       idx=$((idx + 1))
     done
     killall cfprefsd 2>/dev/null
+  else
+    echo "!!! iTerm has no preferences yet (never launched?); font not set."
+    FAILED+=("iTerm font (open iTerm once, quit it, and re-run)")
   fi
 fi
 
 # ------------------------------------------------------------------------------
 # Visual Studio Code
 # ------------------------------------------------------------------------------
+# Both CLIs accept repeated --install-extension flags, so one call per editor.
+# --force upgrades an already-installed extension rather than skipping it.
+VSCODE_EXTENSIONS=(
+  bradlc.vscode-tailwindcss
+  docker.docker
+  mechatroner.rainbow-csv
+  ms-azuretools.vscode-bicep
+  ms-azuretools.vscode-containers
+  ms-azuretools.vscode-docker
+  ms-dotnettools.vscode-dotnet-runtime
+  ms-python.debugpy
+  ms-python.python
+  ms-python.vscode-pylance
+  ms-python.vscode-python-envs
+  ms-toolsai.jupyter
+  ms-vscode-remote.remote-containers
+  saoudrizwan.claude-dev
+)
+CURSOR_EXTENSIONS=(
+  docker.docker
+  mechatroner.rainbow-csv
+  ms-azuretools.vscode-containers
+  ms-azuretools.vscode-docker
+  ms-python.debugpy
+  ms-python.python
+  ms-python.vscode-pylance
+  ms-toolsai.jupyter
+  ms-vscode-remote.remote-containers
+)
+install_extensions() {   # install_extensions <cli> <extension>...
+  local cli="$1" args=()
+  shift
+  for ext; do args+=(--install-extension "$ext"); done
+  "$cli" "${args[@]}" --force
+}
 if command -v code >/dev/null 2>&1; then
   echo
   echo "==> Visual Studio Code"
-  step "Jupyter extension" code --install-extension ms-toolsai.jupyter --force
+  step "VS Code extensions" install_extensions code "${VSCODE_EXTENSIONS[@]}"
+fi
+if command -v cursor >/dev/null 2>&1; then
+  echo
+  echo "==> Cursor"
+  step "Cursor extensions" install_extensions cursor "${CURSOR_EXTENSIONS[@]}"
+fi
+
+# ------------------------------------------------------------------------------
+# Rokit (Roblox toolchain manager; its installer also wires up ~/.zshenv)
+# ------------------------------------------------------------------------------
+echo
+echo "==> Rokit"
+if [ -x "$HOME/.rokit/bin/rokit" ]; then
+  echo "    already installed; it updates itself with \`rokit self-update\`"
+else
+  step "Install Rokit" bash -c \
+    'curl -sSf https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | bash'
 fi
 
 # ------------------------------------------------------------------------------
@@ -447,9 +544,10 @@ ssh-add --apple-use-keychain "$HOME/.ssh/github" 2>/dev/null ||
 # password being typed if it happens mid-script.
 # ------------------------------------------------------------------------------
 echo
-echo "==> Restarting Finder and Dock"
+echo "==> Restarting Finder, Dock and the menu bar"
 killall Finder 2>/dev/null
 killall Dock 2>/dev/null
+killall SystemUIServer 2>/dev/null   # picks up the screenshot location
 
 # ------------------------------------------------------------------------------
 echo

@@ -6,8 +6,12 @@ can't be, each with the reason why.
 
 ## Getting started
 
-1. Clone this repository into `~/Code`
-1. Run `./run.sh`
+1. Sign in to iCloud and the App Store (the `mas` entries in the `Brewfile`
+   need it)
+1. Clone this repository into `~/Code`. On a fresh Mac the `git` command
+   triggers the Command Line Tools install dialog; accept it, wait, then clone
+1. Run `./run.sh`. It asks for your password (Homebrew and the .NET SDK
+   installer), your git name and email, and an SSH key passphrase
 1. Open a new terminal and work through the [Manual steps](#manual-steps)
 
 `run.sh` is safe to re-run. Every step is idempotent, it only prompts for input
@@ -16,20 +20,29 @@ rather than stopping at the first one.
 
 ### What it does
 
-- Installs Homebrew and everything in the `Brewfile`
+- Installs Rosetta 2, Homebrew, and everything in the `Brewfile` (formulae,
+  casks and App Store apps), and puts `brew` on the PATH of new shells
 - Installs a LaunchAgent that upgrades formulae and casks in the background,
   leaving self-updating apps and root-installer casks alone
 - Reinstalls the Xcode Command Line Tools if they have no package receipt
-- Configures git, including Beyond Compare as the diff and merge tool
-- Installs the .NET tooling and Claude Code
+- Configures git from `config/gitconfig` (Beyond Compare as diff and merge
+  tool, `git lg`, prune on fetch) and installs the global ignore file
+- Installs the .NET global tools, Claude Code and Rokit
 - Sets up Oh My Zsh with zsh-syntax-highlighting, and installs the
   powerlevel10k theme along with the finished `config/p10k.zsh`, so the
   interactive `p10k configure` wizard never has to be run
-- Applies the Finder, Dock and Spotlight defaults
+- Applies the system, Finder, Dock, trackpad and Spotlight defaults: dark
+  mode, list view, folders first, tap to click, auto-hiding Dock, screenshots
+  to Downloads, no auto-capitalisation
 - Creates `~/Code`
 - Configures Rectangle, Stats, SmoothScroll and iTerm
-- Installs the VS Code Jupyter extension
+- Installs the VS Code and Cursor extensions
 - Generates a GitHub SSH key and adds it to the keychain
+
+`Taskfile.yml` has the maintenance jobs: `task lint` runs the CI checks,
+`task check` confirms the `Brewfile` is fully installed, `task drift` lists
+what's on this Mac but not in the repo, and `task autoupdate-status` shows the
+background upgrade agent.
 
 ## Homebrew
 
@@ -46,9 +59,11 @@ rather than stopping at the first one.
   `HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS` to restore the old behaviour; the
   apps update themselves in their own time. `brew outdated --cask --greedy`
   shows what brew would have done.
-- **Casks whose installer needs root** (`SUDO_CASKS` in the script, currently
-  just `dotnet-sdk`) are skipped, because a launchd job has nowhere to ask for
-  a password. `run.sh` upgrades them instead, while you're at the keyboard.
+- **Casks whose installer is a `.pkg`** (`SUDO_CASKS` in the script:
+  `dotnet-sdk`, `naps2`, `wifiman`) are skipped, because they need root and a
+  launchd job has nowhere to ask for a password. `run.sh` upgrades them
+  instead, while you're at the keyboard. When adding a cask, check
+  `brew info --cask <name>` for a `Pkg` artifact and add it to the list.
   Note that the .NET SDK upgrade uninstalls every `com.microsoft.dotnet.*`
   package first, including older runtimes.
 
@@ -71,18 +86,17 @@ A failed run turns into a yellow warning the next time a login shell starts
 a notification, but launchd jobs aren't guaranteed notification permission, so
 don't rely on it.
 
-To sync the `Brewfile` with what's actually installed:
+To keep the `Brewfile` honest, `task drift` lists top-level formulae, casks,
+.NET tools and VS Code extensions that are installed but not in the repo. Add
+what you want to keep, uninstall the rest by name. The `Brewfile` has a few
+commented-out entries (`pyenv`, `poetry`, `ta-lib`, `mongodb-atlas-cli`): those
+are deliberately not installed on a new machine, so `drift` will keep listing
+them until they're uninstalled here.
 
-```
-brew bundle dump --force --describe --file=Brewfile   # rewrite from what's installed
-brew bundle cleanup --file=Brewfile                   # list what's installed but unlisted
-```
-
-Read the `cleanup` output before acting on it, and don't reach for `--force`
-casually. It proposes removing everything not required by the `Brewfile` —
-which includes the dependencies of anything installed manually outside it, so
-`libpng`, `freetype` and friends show up as removable. Uninstall the handful
-you actually want gone by name instead.
+Avoid `brew bundle cleanup --force`. It proposes removing everything not
+required by the `Brewfile`, which includes the dependencies of anything
+installed manually outside it, so `libpng`, `freetype` and friends show up as
+removable.
 
 ## Command Line Tools
 
@@ -117,6 +131,28 @@ macOS releases themselves are deliberately left out of `run.sh`. Installing one
 reboots the machine, which would abandon the rest of the script, so never
 automate `softwareupdate --install --all`. Let the settings above install them,
 and check Software Update by hand if one appears stuck.
+
+## Before wiping this Mac
+
+`run.sh` recreates the software and settings. It does not recreate data, and a
+few things live outside this repo on purpose. Check each before erasing:
+
+- **Run `task drift`** and fold anything you want to keep into the repo
+- **`~/Code`**: every repo pushed, no uncommitted work (`git status` in each)
+- **SSH**: `run.sh` generates a new `~/.ssh/github` key on the new machine.
+  Add it to GitHub afterwards and remove the old one. Copy any other keys in
+  `~/.ssh` by hand if you still need them
+- **Licences**: SmoothScroll (kept out of the repo deliberately), Beyond
+  Compare, Rider (JetBrains account), Bambu Studio account
+- **Signed-in apps** re-authenticate through their own flows: 1Password, Slack,
+  Chrome profiles, Google Drive, Docker, `gh auth login`, `az login`, Claude
+- **Claude Code**: `~/.claude` holds settings, memory and project notes. Copy
+  it across if you want them back
+- **Ollama models** in `~/.ollama` are large and re-downloadable; skip them
+- **iTerm** keyboard mappings and **Rider** settings are manual steps below;
+  Rider can also restore from JetBrains settings sync
+- **Anything in `~/Downloads`**, since Finder and screenshots both default
+  there
 
 ## Manual steps
 

@@ -1,0 +1,26 @@
+# Shared git settings, pulled in by ~/.gitconfig via include.path (run.sh sets
+# that up). user.name and user.email stay in ~/.gitconfig, where run.sh prompts
+# for them. Edit here, not with `git config --global`, or the two will drift.
+[init]
+	defaultBranch = main
+[pull]
+	rebase = false
+[fetch]
+	prune = true
+[alias]
+	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+
+# Beyond Compare as diff and merge tool. Needs its CLI tools: open Beyond
+# Compare and choose Install Command Line Tools from the app menu (`bcomp`).
+[diff]
+	tool = bc
+[difftool]
+	prompt = false
+[difftool "bc"]
+	trustExitCode = true
+[merge]
+	tool = bc
+[mergetool]
+	keepBackup = false
+[mergetool "bc"]
+	trustExitCode = true

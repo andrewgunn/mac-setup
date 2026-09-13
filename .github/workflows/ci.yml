@@ -11,7 +11,7 @@ jobs:
     name: Lint shell scripts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Run shellcheck
         run: shellcheck run.sh config/brew-autoupdate.sh
 
@@ -19,13 +19,14 @@ jobs:
     name: Validate Brewfile
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Confirms every formula, cask and tap in the Brewfile actually resolves,
       # so a typo'd name is caught here and not halfway through a new machine.
       - name: Check Brewfile entries resolve
         run: |
           brew update
           rc=0
+          sudo_casks=" $(config/brew-autoupdate.sh --print-sudo-casks) "
           while IFS= read -r line; do
             case "$line" in
               brew\ *) kind=--formula ;;
@@ -50,6 +51,15 @@ jobs:
               rc=1
             else
               echo "ok        $name"
+            fi
+            # A .pkg cask needs sudo, so the background updater must skip it
+            # or it fails (or worse, prompts) unattended. Self-updating casks
+            # are already skipped wholesale, so only the rest need listing.
+            if [ "$kind" = --cask ] && printf '%s' "$info" | grep -q '(Pkg)' &&
+               ! printf '%s' "$info" | grep -q '(auto_updates)' &&
+               [ "${sudo_casks#* "$name" }" = "$sudo_casks" ]; then
+              echo "NEEDS-SUDO $name is a .pkg cask but not in SUDO_CASKS (config/brew-autoupdate.sh)"
+              rc=1
             fi
           done < Brewfile
           exit $rc

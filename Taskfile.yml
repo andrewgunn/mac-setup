@@ -1,0 +1,37 @@
+# https://taskfile.dev — `brew 'go-task'` is in the Brewfile.
+version: '3'
+
+tasks:
+  default:
+    cmds:
+      - task --list
+
+  lint:
+    desc: Run the same checks as CI
+    cmds:
+      - shellcheck run.sh config/brew-autoupdate.sh
+      - actionlint
+
+  check:
+    desc: Is everything in the Brewfile installed?
+    cmds:
+      - brew bundle check --verbose --file=Brewfile
+
+  drift:
+    desc: What's installed on this Mac but missing from the Brewfile?
+    cmds:
+      - |
+        echo "formulae (leaves):"
+        comm -23 <(brew leaves | sort) <(sed -n "s/^brew '\([^']*\)'.*/\1/p" Brewfile | sort) | sed 's/^/  /'
+        echo "casks:"
+        comm -23 <(brew list --cask | sort) <(sed -n "s/^cask '\([^']*\)'.*/\1/p" Brewfile | sort) | sed 's/^/  /'
+        echo "dotnet tools:"
+        dotnet tool list -g | tail -n +3 | awk '{print "  " $1}'
+        echo "vscode extensions:"
+        code --list-extensions | sed 's/^/  /'
+
+  autoupdate-status:
+    desc: State of the background Homebrew upgrade agent
+    cmds:
+      - launchctl print gui/$(id -u)/com.andrewgunn.brew-autoupdate | grep -E 'state =|runs =|last exit|run interval'
+      - tail -n 20 ~/Library/Logs/brew-autoupdate.log
