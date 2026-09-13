@@ -449,6 +449,20 @@ fi
 step "brew update" brew update
 step -i "brew upgrade (formulae)" indented brew upgrade --formula
 
+# App Store apps (the `mas` lines) need a signed-in App Store, and there's no
+# way to check that from the command line any more, so ask. A quick "y" is the
+# only cost when already signed in; otherwise the store is opened to sign in.
+MAS_APPS=$(sed -n "s/^mas '\([^']*\)'.*/\1/p" "$REPO_DIR/Brewfile" | tr '\n' ' ')
+if [ -n "$MAS_APPS" ]; then
+  ask "Signed in to the App Store? Needed for: ${MAS_APPS% }[Y/n] "; read -r reply
+  case "$reply" in
+    n|N|no|NO)
+      open -a "App Store"
+      ask "Sign in there, then press Enter to continue "; read -r _
+      ;;
+  esac
+fi
+
 # brew bundle prints "Using <x>" for everything already installed; only the
 # installs are interesting, so those lines are dropped and the installs
 # counted. --adopt is implied, so apps already sitting in /Applications are
