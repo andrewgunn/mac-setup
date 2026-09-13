@@ -21,8 +21,8 @@ While it runs, each step shows a spinner with its last few lines of output,
 then folds into one tick or cross with the time taken. Settings report what
 actually changed, so a re-run reads "all already set". Long or interactive
 steps (downloads, sudo, `ssh-keygen`) stay live. It ends with a summary, a
-chart of where the time went, a checklist of what's still manual, and a
-notification (with iTerm's icon when run from iTerm).
+chart of where the time went, and a checklist of what's still manual. Runs
+over two minutes also ring the bell and post a notification.
 
 - `./run.sh -v` streams every step's output instead of folding it
 - `NO_COLOR=1`, or piping the output, switches to plain ASCII

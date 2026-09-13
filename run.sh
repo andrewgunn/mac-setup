@@ -54,8 +54,6 @@ LOG="$LOG_DIR/$(date +%Y-%m-%d-%H%M%S).log"
 
 START=$SECONDS
 FAILED=()
-SECTION_N=0
-SECTION_TOTAL=14
 SECTION_NAMES=()
 SECTION_SECS=()
 SECTION_START=$SECONDS
@@ -78,8 +76,8 @@ todo() { emit "  $YELLOW$G_TODO$RESET $*"; }
 fail() { emit "  $RED$G_FAIL $*$RESET"; FAILED+=("$*"); }
 ask()  { printf '  %s?%s %s' "$CYAN" "$RESET" "$1"; }   # ask <prompt>; then read
 
-# Section headers: the title with the section counter beside it. The time each
-# section takes is recorded for the chart at the end.
+# Section headers. The time each section takes is recorded for the chart at
+# the end.
 close_section() {
   if [ -n "$CURRENT_SECTION" ]; then
     SECTION_NAMES+=("$CURRENT_SECTION")
@@ -90,9 +88,8 @@ section() {
   close_section
   CURRENT_SECTION="$1"
   SECTION_START=$SECONDS
-  SECTION_N=$((SECTION_N + 1))
   emit ''
-  emit "$BOLD$1$RESET $DIM$SECTION_N of $SECTION_TOTAL$RESET"
+  emit "$BOLD$1$RESET"
   set_title "$1"
 }
 
@@ -268,8 +265,8 @@ trap on_interrupt INT TERM
 # ==============================================================================
 emit ''
 emit "$BOLD${CYAN}mac-setup$RESET  $DIM${REPO_DIR/#$HOME/~} · $(date '+%a %d %b %H:%M')$RESET"
-emit "$DIM$SECTION_TOTAL sections: preferences, Command Line Tools, Homebrew, background upgrades, git,$RESET"
-emit "$DIM.NET, Claude Code, Oh My Zsh, app preferences, iTerm, editors, Rokit, SSH$RESET"
+emit "${DIM}preferences, Command Line Tools, Homebrew, background upgrades, git, .NET,$RESET"
+emit "${DIM}Claude Code, Oh My Zsh, app preferences, iTerm, editors, Rokit, GitHub$RESET"
 section "Preflight"
 info "macOS $(sw_vers -productVersion) on $(uname -m), $(scutil --get ComputerName 2>/dev/null || hostname)"
 info "log: ${LOG/#$HOME/~}"
@@ -941,7 +938,10 @@ if [ "$SHELL_CHANGED" = 1 ]; then
   emit ''
 fi
 
-# A nudge for anyone who wandered off during the downloads.
-[ "$TTY" = 1 ] && printf '\a'
-notify "mac-setup" "$SUMMARY"
+# A fresh-Mac run is 20-40 minutes of downloads and nobody watches all of it;
+# ring and notify so they know it's done. A quick re-run doesn't need either.
+if [ $((SECONDS - START)) -ge 120 ]; then
+  [ "$TTY" = 1 ] && printf '\a'
+  notify "mac-setup" "$SUMMARY"
+fi
 exit 0
