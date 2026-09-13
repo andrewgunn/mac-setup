@@ -11,6 +11,15 @@ FAILED=()
 # makes every sudo fail with "no password was provided" instead.
 unset SUDO_ASKPASS
 
+# Ask for the password once, up front, and keep the sudo ticket alive until the
+# script exits. Otherwise Homebrew, each .pkg cask and the keychain each prompt
+# in turn, minutes apart, and a missed prompt fails that step.
+echo "==> This script needs your password for sudo (Homebrew, .pkg installers)."
+sudo -v || exit 1
+( while kill -0 "$$" 2>/dev/null; do sudo -n true 2>/dev/null; sleep 60; done ) &
+SUDO_KEEPALIVE=$!
+trap 'kill "$SUDO_KEEPALIVE" 2>/dev/null' EXIT
+
 # Run a step, but keep going if it fails — a missing cask shouldn't abandon the
 # rest of the setup. Anything that failed is listed again at the end.
 step() {

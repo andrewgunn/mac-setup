@@ -11,9 +11,9 @@ can't be, each with the reason why.
 1. Clone this repository into `~/Code`. On a fresh Mac the `git` command
    triggers the Command Line Tools install dialog; accept it, wait, then clone
 1. Run `./run.sh` from a normal terminal, not from inside an editor or agent
-   shell: it asks for your password (Homebrew and the `.pkg` casks), your git
-   name and email, and an SSH key passphrase, and sudo needs a real terminal
-   to prompt on
+   shell, because sudo needs a real terminal to prompt on. It asks for your
+   password once at the start and keeps the sudo ticket alive for the rest of
+   the run, then for your git name and email, and an SSH key passphrase
 1. Open a new terminal and work through the [Manual steps](#manual-steps)
 
 `run.sh` is safe to re-run. Every step is idempotent, it only prompts for input
