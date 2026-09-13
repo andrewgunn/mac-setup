@@ -101,12 +101,13 @@ section() {
 }
 
 # Background renderer for a quiet step: a spinner line, then the last few lines
-# of the command's output in grey, redrawn in place. On SIGTERM it erases
-# itself so the caller can print the one-line result in its place.
-render() {   # render <label> <output-file>
+# of the command's output in grey, redrawn in place. It stops when the caller
+# creates the flag file, erasing itself so the one-line result can take its
+# place. (A flag rather than a signal: bash 3.2 can print "run_pending_traps"
+# warnings when a trapped subshell is killed mid-setup.)
+render() {   # render <label> <output-file> <stop-flag>
   local frames=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏) i=0 n=0 body label
-  trap '[ "$n" -gt 0 ] && printf "\e[%dA\r\e[J" "$n" > /dev/tty; exit 0' TERM
-  while :; do
+  while [ ! -e "$3" ]; do
     measure
     label=$(printf '%s' "$1" | cut -c1-$((COLS - 4)))
     body=$(tail -n 4 "$2" 2>/dev/null | tr '\r' '\n' | tail -n 4 |
@@ -124,6 +125,7 @@ render() {   # render <label> <output-file>
     i=$((i + 1))
     sleep 0.12
   done
+  [ "$n" -gt 0 ] && printf '\e[%dA\r\e[J' "$n" > /dev/tty
 }
 
 # step [-i] <label> <command...>
@@ -136,22 +138,31 @@ render() {   # render <label> <output-file>
 # rest of the setup.
 #
 # -i marks a step that must stay live: it's interactive (sudo prompts, "press
-# RETURN") or long enough that a spinner alone would look like a hang.
+# RETURN") or long enough that a spinner alone would look like a hang. Its
+# header line (▸) is printed first so the output has something to sit under;
+# if the command turns out to print nothing, the header is replaced by the
+# result line rather than left as a duplicate.
 step() {
   local live=0
   [ "$1" = -i ] && { live=1; shift; }
-  local label="$1" start=$SECONDS rc out='' sp=''
+  local label="$1" start=$SECONDS rc out='' sp='' log_before=0
   shift
   if [ "$live" = 1 ] || [ "$VERBOSE" = 1 ]; then
     emit "  $BLUE$G_RUN$RESET $label"
+    log_before=$(wc -c < "$LOG")
     "$@"
     rc=$?
+    # Only `indented` copies its output to the log, so an unchanged log after
+    # an indented command means nothing was printed: reclaim the header line.
+    if [ "$TTY" = 1 ] && [ "$1" = indented ] && [ "$(wc -c < "$LOG")" -eq "$log_before" ]; then
+      printf '\e[1A\r\e[J' > /dev/tty
+    fi
   else
     out=$(mktemp "${TMPDIR:-/tmp}/mac-setup.XXXXXX")
-    if [ "$TTY" = 1 ]; then render "$label" "$out" & sp=$!; fi
+    if [ "$TTY" = 1 ]; then render "$label" "$out" "$out.done" & sp=$!; fi
     "$@" > "$out" 2>&1
     rc=$?
-    if [ -n "$sp" ]; then kill "$sp" 2>/dev/null; wait "$sp" 2>/dev/null; fi
+    if [ -n "$sp" ]; then touch "$out.done"; wait "$sp" 2>/dev/null; rm -f "$out.done"; fi
     { echo "--- $label"; cat "$out"; } >> "$LOG"
   fi
   local secs=$((SECONDS - start)) dur=''
