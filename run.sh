@@ -28,12 +28,12 @@ done
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-dumb}" != dumb ]; then
   TTY=1
   BOLD=$'\e[1m' DIM=$'\e[2m' RED=$'\e[31m' GREEN=$'\e[32m' YELLOW=$'\e[33m'
-  BLUE=$'\e[34m' CYAN=$'\e[36m' RESET=$'\e[0m'
-  G_OK='✔' G_FAIL='✖' G_WARN='⚠' G_RUN='▸' G_INFO='·' G_TODO='☐' G_RULE='─' G_BAR='━'
+  CYAN=$'\e[36m' RESET=$'\e[0m'
+  G_OK='✔' G_FAIL='✖' G_WARN='⚠' G_INFO='·' G_TODO='☐' G_RULE='─' G_BAR='━'
 else
   TTY=0
-  BOLD='' DIM='' RED='' GREEN='' YELLOW='' BLUE='' CYAN='' RESET=''
-  G_OK='ok  ' G_FAIL='FAIL' G_WARN='warn' G_RUN='>' G_INFO='-' G_TODO='[ ]' G_RULE='-' G_BAR='#'
+  BOLD='' DIM='' RED='' GREEN='' YELLOW='' CYAN='' RESET=''
+  G_OK='ok  ' G_FAIL='FAIL' G_WARN='warn' G_INFO='-' G_TODO='[ ]' G_RULE='-' G_BAR='#'
 fi
 # Terminal width, re-read whenever something is drawn to fit it: the window can
 # be resized mid-run, and a line that wraps under the spinner breaks the redraw.
@@ -103,7 +103,7 @@ render() {   # render <label> <output-file> <stop-flag>
   while [ ! -e "$3" ]; do
     measure
     label=$(printf '%s' "$1" | cut -c1-$((COLS - 4)))
-    body=$(tail -n 4 "$2" 2>/dev/null | tr '\r' '\n' | tail -n 4 |
+    body=$(tail -n 6 "$2" 2>/dev/null | tr '\r' '\n' | tail -n 6 |
       sed $'s/\e\\[[0-9;]*[A-Za-z]//g' | expand | cut -c1-$((COLS - 6)))
     {
       [ "$n" -gt 0 ] && printf '\e[%dA' "$n"
@@ -130,26 +130,20 @@ render() {   # render <label> <output-file> <stop-flag>
 # the end, but the script keeps going: a missing cask shouldn't abandon the
 # rest of the setup.
 #
-# -i marks a step that must stay live: it's interactive (sudo prompts, "press
-# RETURN") or long enough that a spinner alone would look like a hang. Its
-# header line (▸) is printed first so the output has something to sit under;
-# if the command turns out to print nothing, the header is replaced by the
-# result line rather than left as a duplicate.
+# -i marks a genuinely interactive command (the Homebrew installer's "press
+# RETURN", ssh-keygen's passphrase, the GitHub sign-in) whose output can't be
+# captured. It gets a dim lead-in line, streams as-is, then gets its result
+# line. Everything else folds, including the long Homebrew steps: sudo prompts
+# go to /dev/tty regardless, so capturing stdout doesn't get in their way.
 step() {
   local live=0
   [ "$1" = -i ] && { live=1; shift; }
-  local label="$1" start=$SECONDS rc out='' sp='' log_before=0
+  local label="$1" start=$SECONDS rc out='' sp=''
   shift
   if [ "$live" = 1 ] || [ "$VERBOSE" = 1 ]; then
-    emit "  $BLUE$G_RUN$RESET $label"
-    log_before=$(wc -c < "$LOG")
+    emit "  $DIM$G_INFO $label$RESET"
     "$@"
     rc=$?
-    # Only `indented` copies its output to the log, so an unchanged log after
-    # an indented command means nothing was printed: reclaim the header line.
-    if [ "$TTY" = 1 ] && [ "$1" = indented ] && [ "$(wc -c < "$LOG")" -eq "$log_before" ]; then
-      printf '\e[1A\r\e[J' > /dev/tty
-    fi
   else
     out=$(mktemp "${TMPDIR:-/tmp}/mac-setup.XXXXXX")
     if [ "$TTY" = 1 ]; then render "$label" "$out" "$out.done" & sp=$!; fi
@@ -172,9 +166,6 @@ step() {
   [ -n "$out" ] && rm -f "$out"
   return "$rc"
 }
-
-# Stream a live command, indented under its step line and copied to the log.
-indented() { "$@" 2>&1 | tee -a "$LOG" | sed -l 's/^/      /'; return "${PIPESTATUS[0]}"; }
 
 # pref [-currentHost] <domain> <key> <type> <value>
 #
@@ -398,7 +389,7 @@ else
     sed -n 's/^ *\* Label: \(Command Line Tools.*\)$/\1/p' |
     sort -V | tail -1)
   if [ -n "$CLT_LABEL" ]; then
-    step -i "Install $CLT_LABEL" indented sudo softwareupdate --install "$CLT_LABEL"
+    step "Install $CLT_LABEL" sudo softwareupdate --install "$CLT_LABEL"
   else
     xcode-select --install 2>/dev/null || true
     fail "Software Update offered no CLT package; finish the xcode-select dialog by hand"
@@ -442,12 +433,12 @@ if [ "$(uname -m)" = arm64 ]; then
   if pgrep -q oahd; then
     ok "Rosetta 2 installed"
   else
-    step -i "Install Rosetta 2" indented softwareupdate --install-rosetta --agree-to-license
+    step "Install Rosetta 2" softwareupdate --install-rosetta --agree-to-license
   fi
 fi
 
 step "brew update" brew update
-step -i "brew upgrade (formulae)" indented brew upgrade --formula
+step "brew upgrade (formulae)" brew upgrade --formula
 
 # App Store apps (the `mas` lines) need a signed-in App Store, and there's no
 # way to check that from the command line any more, so ask. A quick "y" is the
@@ -464,16 +455,16 @@ if [ -n "$MAS_APPS" ]; then
 fi
 
 # brew bundle prints "Using <x>" for everything already installed; only the
-# installs are interesting, so those lines are dropped and the installs
-# counted. --adopt is implied, so apps already sitting in /Applications are
-# taken over rather than refused.
+# installs are interesting, so those lines are dropped from the live window
+# and the installs counted. --adopt is implied, so apps already sitting in
+# /Applications are taken over rather than refused.
 BUNDLE_OUT=$(mktemp "${TMPDIR:-/tmp}/mac-setup.XXXXXX")
 brew_bundle() {
-  brew bundle --file="$REPO_DIR/Brewfile" --no-upgrade 2>&1 | tee -a "$LOG" "$BUNDLE_OUT" |
-    grep --line-buffered -v '^Using ' | sed -l 's/^/      /'
+  brew bundle --file="$REPO_DIR/Brewfile" --no-upgrade 2>&1 | tee "$BUNDLE_OUT" |
+    grep --line-buffered -v '^Using '
   return "${PIPESTATUS[0]}"
 }
-step -i "brew bundle ($(grep -cE "^(brew|cask|mas) " "$REPO_DIR/Brewfile") entries)" brew_bundle
+step "brew bundle ($(grep -cE "^(brew|cask|mas) " "$REPO_DIR/Brewfile") entries)" brew_bundle
 INSTALLED_COUNT=$(grep -c '^Installing ' "$BUNDLE_OUT" || true)
 rm -f "$BUNDLE_OUT"
 
@@ -487,8 +478,7 @@ for cask in $("$REPO_DIR/config/brew-autoupdate.sh" --print-sudo-casks); do
   [ -d "$(brew --caskroom)/$cask" ] && SUDO_CASKS+=("$cask")
 done
 if [ ${#SUDO_CASKS[@]} -gt 0 ]; then
-  step -i "brew upgrade sudo casks: ${SUDO_CASKS[*]}" \
-    indented brew upgrade --cask "${SUDO_CASKS[@]}"
+  step "brew upgrade sudo casks: ${SUDO_CASKS[*]}" brew upgrade --cask "${SUDO_CASKS[@]}"
 fi
 
 # ==============================================================================
