@@ -228,11 +228,12 @@ append_block_once() {
   ok "added block to ${file/#$HOME/~}: $DIM$marker$RESET"
 }
 
-# notify <title> <body>. iTerm posts notifications itself when asked via its
-# escape sequence, so they carry its icon; anywhere else a bare osascript
-# notification (credited to Script Editor) is the best available.
+# notify <title> <body>. Ghostty and iTerm both post notifications themselves
+# when asked via the OSC 777 escape, so those carry the terminal's own icon;
+# anywhere else a bare osascript notification (credited to Script Editor) is
+# the best available.
 notify() {
-  if [ "$TTY" = 1 ] && [ "${TERM_PROGRAM:-}" = iTerm.app ]; then
+  if [ "$TTY" = 1 ] && { [ "${TERM_PROGRAM:-}" = ghostty ] || [ "${TERM_PROGRAM:-}" = iTerm.app ]; }; then
     printf '\e]777;notify;%s;%s\a' "$1" "$2" > /dev/tty
   else
     osascript -e "display notification \"$2\" with title \"$1\"" 2>/dev/null
@@ -257,7 +258,7 @@ trap on_interrupt INT TERM
 emit ''
 emit "$BOLD${CYAN}mac-setup$RESET  $DIM${REPO_DIR/#$HOME/~} · $(date '+%a %d %b %H:%M')$RESET"
 emit "${DIM}preferences, Command Line Tools, Homebrew, background upgrades, git, .NET,$RESET"
-emit "${DIM}Claude Code, Oh My Zsh, app preferences, iTerm, editors, Rokit, GitHub$RESET"
+emit "${DIM}Claude Code, Oh My Zsh, app preferences, Ghostty, editors, Rokit, GitHub$RESET"
 section "Preflight"
 info "macOS $(sw_vers -productVersion) on $(uname -m), $(scutil --get ComputerName 2>/dev/null || hostname)"
 info "log: ${LOG/#$HOME/~}"
@@ -486,7 +487,7 @@ fi
 # ==============================================================================
 # A LaunchAgent runs config/brew-autoupdate.sh every 12 hours and at login. It
 # replaces the domt4/autoupdate tap, which had no way to stop Homebrew 6 from
-# upgrading self-updating casks (quitting iTerm, Claude, 1Password... to do
+# upgrading self-updating casks (quitting Ghostty, Claude, 1Password... to do
 # it), and whose --sudo option was the source of the background password
 # prompts. The script explains what it skips and why.
 section "Background upgrades"
@@ -718,40 +719,27 @@ pref com.galambalazs.SmoothScroll launchOnLogin -bool true
 prefs_done "SmoothScroll: login item, reversed wheel, no menu bar icon"
 
 # ==============================================================================
-# iTerm
+# Ghostty
 # ==============================================================================
-section "iTerm"
-if pgrep -xq iTerm2 || pgrep -xq iTerm; then
-  fail "iTerm settings skipped: it's running and would overwrite them (use Terminal.app)"
-else
-  pref com.googlecode.iterm2 PromptOnQuit -bool false
-  pref com.googlecode.iterm2 OnlyWhenMoreTabs -bool false
-  pref com.googlecode.iterm2 UseLionStyleFullscreen -bool false
-  pref com.googlecode.iterm2 ShowFullScreenTabBar -bool false
-  pref com.googlecode.iterm2 DimInactiveSplitPanes -bool false
-  prefs_done "iTerm: no quit prompt, own fullscreen, no pane dimming"
-
-  # Font and ligatures live inside the profile dict, so edit the plist directly,
-  # locating the default profile by its GUID rather than assuming index 0.
-  ITERM_PLIST="$HOME/Library/Preferences/com.googlecode.iterm2.plist"
-  ITERM_GUID=$(defaults read com.googlecode.iterm2 "Default Bookmark Guid" 2>/dev/null)
-  if [ -n "$ITERM_GUID" ] && [ -f "$ITERM_PLIST" ]; then
-    idx=0
-    while g=$(/usr/libexec/PlistBuddy -c "Print :\"New Bookmarks\":$idx:Guid" \
-              "$ITERM_PLIST" 2>/dev/null); do
-      if [ "$g" = "$ITERM_GUID" ]; then
-        /usr/libexec/PlistBuddy \
-          -c "Set :\"New Bookmarks\":$idx:\"Normal Font\" FiraCode-Retina 18" \
-          -c "Set :\"New Bookmarks\":$idx:\"ASCII Ligatures\" true" \
-          "$ITERM_PLIST" 2>/dev/null && ok "default profile: Fira Code 18 with ligatures"
-        break
-      fi
-      idx=$((idx + 1))
-    done
-    killall cfprefsd 2>/dev/null
+# Ghostty reads a text file rather than a plist, so unlike the app preferences
+# above there's nothing to fight over with a running app. The repo's file is
+# included rather than copied: a `config-file` line at the top of
+# ~/.config/ghostty/config means a `git pull` lands here too, while anything
+# added below it on this Mac survives the next run and wins over the repo.
+section "Ghostty"
+GHOSTTY_BIN=/Applications/Ghostty.app/Contents/MacOS/ghostty
+mkdir -p "$HOME/.config/ghostty"
+append_once "$HOME/.config/ghostty/config" 'config-file' \
+  "config-file = $REPO_DIR/config/ghostty"
+ok "Ghostty: Fira Code 18 with ligatures, no quit prompt, own fullscreen, no dimmed splits"
+if [ -x "$GHOSTTY_BIN" ]; then
+  if GHOSTTY_OUT=$("$GHOSTTY_BIN" +validate-config 2>&1); then
+    ok "config accepted by ghostty +validate-config"
   else
-    fail "iTerm font not set: no preferences yet (open iTerm once, quit, re-run)"
+    fail "Ghostty rejected the config: $GHOSTTY_OUT"
   fi
+else
+  info "Ghostty isn't installed, so the config wasn't validated"
 fi
 
 # ==============================================================================
@@ -935,7 +923,7 @@ else
 fi
 [ -f "$HOME/.p10k.zsh" ] || todo "run ${DIM}p10k configure${RESET} in a new terminal"
 todo "drag ~/Code into the Finder sidebar"
-todo "1Password, iTerm key mappings, Rider settings"
+todo "1Password, Rider settings"
 emit ''
 if [ "$SHELL_CHANGED" = 1 ]; then
   info "shell config changed: run ${RESET}exec zsh${DIM} here, or open a new terminal"

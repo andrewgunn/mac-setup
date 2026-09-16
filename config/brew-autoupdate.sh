@@ -5,7 +5,7 @@
 #
 # Two things are deliberately left alone:
 #
-#   - Casks marked `auto_updates true` (Chrome, iTerm, Claude, 1Password...).
+#   - Casks marked `auto_updates true` (Chrome, Ghostty, Claude, 1Password...).
 #     Homebrew 6 upgrades these by default whenever the tap is ahead of the
 #     installed app, and does it by quitting the running app to swap the
 #     bundle. HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS restores the old

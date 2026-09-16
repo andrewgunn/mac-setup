@@ -43,7 +43,7 @@ over two minutes also ring the bell and post a notification.
   `config/p10k.zsh` so the `p10k configure` wizard never runs
 - System defaults: dark mode, Finder list view with folders first, tap to
   click, auto-hiding Dock, screenshots to Downloads, no auto-capitalisation
-- Rectangle shortcuts, Stats, SmoothScroll and iTerm preferences
+- Rectangle shortcuts, Stats, SmoothScroll preferences and the Ghostty config
 - VS Code and Cursor extensions
 - A GitHub SSH key added to the agent and keychain, `gh auth login` in the
   browser, and the key uploaded to the account
@@ -59,7 +59,7 @@ A LaunchAgent, `com.andrewgunn.brew-autoupdate`, runs
 `brew upgrade --formula`, `brew upgrade --cask`, `brew cleanup`. Two things are
 deliberately skipped:
 
-- **Self-updating casks** (`auto_updates true`: Chrome, iTerm, Claude,
+- **Self-updating casks** (`auto_updates true`: Chrome, Ghostty, Claude,
   1Password, Cursor, Slack, Docker Desktop and most of the `Brewfile`).
   Homebrew 6 upgrades these by default whenever the cask is ahead of the app,
   quitting the running app to do it. `HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS`
@@ -90,6 +90,26 @@ entries (`pyenv`, `poetry`, `ta-lib`, `mongodb-atlas-cli`) are deliberately not
 installed on a new machine, so `drift` lists them until they're uninstalled
 here. Avoid `brew bundle cleanup --force`: it also removes the dependencies of
 anything installed outside the `Brewfile`.
+
+## Ghostty
+
+The terminal is [Ghostty](https://ghostty.org), configured by `config/ghostty`:
+Fira Code 18 with ligatures, no confirmation when a pane closes, Ghostty's own
+fullscreen instead of a macOS Space, undimmed splits that open in the current
+directory. Word-wise ⌥← / ⌥→ and ⌥⌫ are bound out of the box, so the key
+mappings iTerm needed by hand are gone.
+
+`run.sh` doesn't copy that file. It puts one line at the top of
+`~/.config/ghostty/config`:
+
+```
+config-file = ~/Code/mac-setup/config/ghostty
+```
+
+so a `git pull` reaches this Mac, and anything written below that line here
+stays put across runs and overrides the repo. ⌘, opens the local file; ⌘⇧,
+reloads both. `ghostty +show-config` prints what's actually in force, and
+`run.sh` runs `ghostty +validate-config` after writing the include.
 
 ## Command Line Tools
 
@@ -142,21 +162,6 @@ Drag `~/Code` into the sidebar. There's no maintained CLI for sidebar items:
 Its preferences aren't exposed through `defaults`, so in Settings > General:
 disable `Keep 1Password in the menu bar`, disable the `Show 1Password`
 shortcut, and set `Show Quick Access` to ⇧⌘P.
-
-### iTerm
-
-`run.sh` sets the quit, fullscreen and dimming preferences and the Fira Code 18
-font with ligatures. The rest live in the profile's keyboard map, where scripted
-edits are too fragile to be worth it. In Settings > Profiles:
-
-1. General > Working Directory > Advanced Configuration > Edit: set
-   `Working Directory for New Split Panes` to `Reuse previous session's directory`
-1. Window > Settings for New Windows > Screen: `Main Screen`
-1. Keys > Key Mappings: `Presets… > Natural Text Editing`, then add a mapping
-   that sends the hex codes `0x1B 0x08`
-
-iTerm rewrites its plist on quit, so `run.sh` skips this section while iTerm is
-running. Use Terminal.app for a first setup.
 
 ### Rider
 

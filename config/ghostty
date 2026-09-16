@@ -1,0 +1,27 @@
+# Ghostty settings. run.sh points ~/.config/ghostty/config at this file with a
+# `config-file` line, so anything added below that line on the machine itself
+# survives a re-run and still wins over what's here.
+#
+# Every key is documented in `man 5 ghostty`; `ghostty +validate-config`
+# checks this file and `ghostty +show-config` prints what's actually in force.
+
+font-family = Fira Code
+font-size = 18
+
+# Fira Code's ligatures are contextual alternates; Ghostty enables them for
+# fonts that ship them, but say so rather than rely on the default.
+font-feature = calt
+font-feature = liga
+
+# Closing a pane, tab or window shouldn't ask first.
+confirm-close-surface = false
+
+# Ghostty's own fullscreen rather than a macOS Space: no slide animation and
+# no separate desktop to swipe back out of.
+macos-non-native-fullscreen = true
+
+# Don't dim the pane that isn't focused.
+unfocused-split-opacity = 1
+
+# A new split starts in the directory the current one is in.
+window-inherit-working-directory = true
