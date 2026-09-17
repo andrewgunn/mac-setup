@@ -194,7 +194,11 @@ for the same reason as Herdr: none of them has an include directive.
   driven like vim: neo-tree open on the left, single click previews a file in
   one reused tab, double click or Enter pins it, ^click jumps to a definition,
   `^P` is Quick Open and `/` searches the project (`g/` searches the file).
-  Atom One Dark on Ghostty's background. `run.sh` runs
+  Atom One Dark on Ghostty's background. The language servers are C#,
+  TypeScript, Python, JSON, TOML and Markdown — the guide's list, with Rust
+  swapped for `lang.dotnet`, since Koala2 is 3,000 C# files and no Rust. Note
+  omnisharp takes about 20 seconds to load a solution that size before
+  ^click starts working. `run.sh` runs
   `nvim --headless "+Lazy! sync" +qa` so the first launch isn't a two-minute
   wait; `:Lazy sync` updates after that. `tree-sitter-cli` is in the `Brewfile`
   because nvim-treesitter requires it — from Homebrew it's upgraded with

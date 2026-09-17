@@ -20,10 +20,12 @@ require("lazy").setup({
     { "LazyVim/LazyVim", import = "lazyvim.plugins" },
     -- VS Code-style file tree (icons + click to open)
     { import = "lazyvim.plugins.extras.editor.neo-tree" },
-    -- Language servers so Ctrl-click can jump to definitions
+    -- Language servers so Ctrl-click can jump to definitions. C# first: it's
+    -- what Koala2 is, and the guide's list (TypeScript, Python, Rust) didn't
+    -- cover it. Rust is dropped for the same reason, in reverse.
+    { import = "lazyvim.plugins.extras.lang.dotnet" },
     { import = "lazyvim.plugins.extras.lang.typescript" },
     { import = "lazyvim.plugins.extras.lang.python" },
-    { import = "lazyvim.plugins.extras.lang.rust" },
     { import = "lazyvim.plugins.extras.lang.json" },
     { import = "lazyvim.plugins.extras.lang.toml" },
     -- Pretty markdown while reading (render-markdown + browser preview)
