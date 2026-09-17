@@ -817,6 +817,10 @@ if command -v herdr >/dev/null 2>&1; then
   # hook is reinstalled here. The install writes into the agent's config
   # directory, which doesn't exist until that agent has run once — so a miss is
   # something to come back to, not a failure.
+  # opencode creates ~/.config/opencode the first time it runs and the
+  # integration writes into it, so ask it its version to bring the directory
+  # into being rather than leaving this as something to come back to.
+  command -v opencode >/dev/null 2>&1 && opencode --version >/dev/null 2>&1
   for agent in claude cursor opencode; do
     agent_state=$(herdr integration status 2>/dev/null | sed -n "s/^$agent: //p")
     case "$agent_state" in

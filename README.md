@@ -159,8 +159,9 @@ Cursor and opencode — so the sidebar knows what each one is doing.
 `herdr integration status` lists every agent Herdr supports and versions what's
 installed, so an outdated hook is replaced on the next run. A hook is written
 into the agent's own config directory, which doesn't exist until that agent has
-run at least once — so opencode is usually reported as still to do, and
-`herdr integration install opencode` after the first `opencode` finishes it.
+run at least once — `run.sh` asks opencode its version first for exactly that
+reason. An agent that still has no config directory is reported as something to
+come back to rather than a failed step.
 
 The **herdr skill** is what lets an agent drive Herdr itself: split a pane,
 start a second agent in it, hand it work, read back what it said. `run.sh`
