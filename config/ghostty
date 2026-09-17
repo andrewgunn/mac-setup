@@ -25,3 +25,47 @@ unfocused-split-opacity = 1
 
 # A new split starts in the directory the current one is in.
 window-inherit-working-directory = true
+
+# Herdr wants these Cmd keys for itself (new tab, close tab, go to, focus the
+# explorer in Neovim, lazygit), so the terminal has to stop swallowing them.
+# Cmd+W no longer closes a Ghostty surface — close the window instead.
+keybind = super+t=unbind
+keybind = super+w=unbind
+keybind = super+k=unbind
+keybind = super+e=unbind
+keybind = super+shift+g=unbind
+
+# Herdr's alt+↑ / alt+↓ cycle panes, which needs a real Alt. Only the right
+# Option is given up: on a British layout the left one still types # (⌥3),
+# € (⌥2) and the rest, and ⌥← / ⌥→ / ⌥⌫ stay word-wise either way.
+macos-option-as-alt = right
+
+# Room to breathe around the grid, a bar cursor that doesn't blink, and enough
+# scrollback to page back through a long agent run.
+window-padding-x = 10
+window-padding-y = 8
+cursor-style = bar
+cursor-style-blink = false
+scrollback-limit = 100000
+
+# Atom One Dark. The Neovim theme paints its background this exact colour, so
+# the editor sits flush in the terminal with no seam at the edges.
+background = #1D1E27
+foreground = #FDFDFD
+
+palette = 0=#282A2B
+palette = 1=#F3977F
+palette = 2=#5ADECD
+palette = 3=#F272A2
+palette = 4=#886F97
+palette = 5=#C574DD
+palette = 6=#79E6F3
+palette = 7=#FDFDFD
+palette = 8=#415844
+palette = 9=#FF4971
+palette = 10=#18E3C8
+palette = 11=#FF8037
+palette = 12=#556FFF
+palette = 13=#B0D143
+palette = 14=#3FDCEE
+palette = 15=#BEBEC1

@@ -228,6 +228,30 @@ append_block_once() {
   ok "added block to ${file/#$HOME/~}: $DIM$marker$RESET"
 }
 
+# Point a config file or directory at the copy in this repo, so a `git pull`
+# reaches the app and there's only ever one copy to edit. Used where the app has
+# no include directive of its own (Ghostty and git do, so they use one instead).
+# Anything already in place is moved aside rather than lost; *.bak-* is ignored
+# by .gitignore. An empty file is the app's own placeholder, so it just goes.
+link_config() {   # link_config <path in this repo> <destination>
+  local src="$REPO_DIR/$1" dest="$2"
+  mkdir -p "$(dirname "$dest")"
+  if [ -L "$dest" ] && [ "$(readlink "$dest")" = "$src" ]; then
+    return 0
+  fi
+  if [ -e "$dest" ] || [ -L "$dest" ]; then
+    if [ -f "$dest" ] && [ ! -s "$dest" ]; then
+      rm -f "$dest"
+    else
+      local backup
+      backup="$dest.bak-$(date +%Y%m%d%H%M%S)"
+      mv "$dest" "$backup"
+      warn "moved the existing $(basename "$dest") aside: ${backup/#$HOME/~}"
+    fi
+  fi
+  ln -s "$src" "$dest"
+}
+
 # notify <title> <body>. Ghostty and iTerm both post notifications themselves
 # when asked via the OSC 777 escape, so those carry the terminal's own icon;
 # anywhere else a bare osascript notification (credited to Script Editor) is
@@ -743,6 +767,100 @@ else
 fi
 
 # ==============================================================================
+# Terminal tools: Neovim, lazygit, and the shell around them
+# ==============================================================================
+# The setup these three make up is Datalumina's, documented at
+# https://learn.datalumina.com/docs/herdr: agents in Herdr panes, Neovim as the
+# viewer, lazygit for anything git, zoxide to get around. None of the three has
+# an include directive, so each config is symlinked into place.
+section "Terminal tools"
+link_config config/nvim "$HOME/.config/nvim"
+ok "Neovim: LazyVim, explorer on the left, click to preview, Atom One Dark"
+if [ -d "$HOME/.local/share/nvim/lazy/lazy.nvim" ]; then
+  ok "plugins installed; ${DIM}:Lazy sync${RESET} updates them"
+elif command -v nvim >/dev/null 2>&1; then
+  # Otherwise the first `nvim` sits cloning plugins for a minute or two.
+  step "Install the Neovim plugins" nvim --headless "+Lazy! sync" +qa
+else
+  info "nvim not on PATH; the plugins will install on first launch"
+fi
+
+link_config config/lazygit.yml "$HOME/Library/Application Support/lazygit/config.yml"
+ok "lazygit: delta diffs, no chrome, a colour per agent's branch prefix"
+
+append_once "$HOME/.zshrc" 'config/shell\.zsh' "source $REPO_DIR/config/shell.zsh"
+ok "zshrc: bat, eza, fd and fzf aliased, ${DIM}z${RESET} jumps to folders, ${DIM}^R${RESET} searches history"
+
+# ==============================================================================
+# Herdr
+# ==============================================================================
+# One terminal window holding every agent: a sidebar of workspaces, tabs and
+# panes that survives closing the window. Installed from the Brewfile; what's
+# left is the config, the per-agent hooks that report state back to the sidebar,
+# and the skill that lets an agent drive Herdr itself.
+section "Herdr"
+link_config config/herdr.toml "$HOME/.config/herdr/config.toml"
+if command -v herdr >/dev/null 2>&1; then
+  if HERDR_OUT=$(herdr config check 2>&1); then
+    ok "config accepted by ${DIM}herdr config check${RESET}"
+  else
+    fail "Herdr rejected the config: $HERDR_OUT"
+  fi
+  # A server that's already running keeps the old config until it's told.
+  if herdr server reload-config >/dev/null 2>&1; then
+    ok "the running server picked up the new config"
+  fi
+
+  # A hook in each agent's own config directory that reports what the agent is
+  # doing back to the sidebar. Only the agents this Mac has; `herdr integration
+  # status` lists every one Herdr supports, and versions them, so an "outdated"
+  # hook is reinstalled here. The install writes into the agent's config
+  # directory, which doesn't exist until that agent has run once — so a miss is
+  # something to come back to, not a failure.
+  for agent in claude cursor opencode; do
+    agent_state=$(herdr integration status 2>/dev/null | sed -n "s/^$agent: //p")
+    case "$agent_state" in
+      current*) ok "$agent integration up to date" ;;
+      *)
+        if herdr integration install "$agent" >/dev/null 2>&1; then
+          ok "$agent integration installed"
+        else
+          info "$agent integration needs $agent to have run once, then: ${DIM}herdr integration install $agent${RESET}"
+        fi
+        ;;
+    esac
+  done
+
+  # Oh My Zsh loads completions from its custom directory with no further setup.
+  HERDR_COMPLETIONS="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/completions"
+  mkdir -p "$HERDR_COMPLETIONS"
+  if herdr completion zsh > "$HERDR_COMPLETIONS/_herdr" 2>/dev/null; then
+    ok "zsh completions written to ${HERDR_COMPLETIONS/#$HOME/~}/_herdr"
+  else
+    rm -f "$HERDR_COMPLETIONS/_herdr"
+    warn "couldn't generate zsh completions for herdr"
+  fi
+else
+  fail "herdr isn't on PATH (did the Brewfile install it?)"
+fi
+
+# The skill teaches an agent Herdr's CLI, so it can split a pane, start a second
+# agent in it and hand it work. Installed at user level rather than per project,
+# into ~/.agents/skills, from where Claude Code gets a symlink at
+# ~/.claude/skills/herdr and Cursor and OpenCode read it directly. --yes and the
+# explicit --agent list keep it from asking anything: unattended, it would
+# otherwise stop on the scope and agent prompts.
+HERDR_SKILL_AGENTS=(--agent claude-code --agent cursor --agent opencode)
+if [ -d "$HOME/.claude/skills/herdr" ]; then
+  ok "the herdr skill is installed for Claude Code"
+elif command -v npx >/dev/null 2>&1; then
+  step "Install the herdr skill" npx --yes skills add herdrdev/herdr \
+    --skill herdr "${HERDR_SKILL_AGENTS[@]}" --global --yes
+else
+  info "npx not on PATH; later: ${DIM}npx skills add herdrdev/herdr --skill herdr -g${RESET}"
+fi
+
+# ==============================================================================
 # Editors
 # ==============================================================================
 # Both CLIs accept repeated --install-extension flags, so one call per editor.
@@ -922,6 +1040,11 @@ else
   todo "System Settings > Accessibility > Display: larger pointer"
 fi
 [ -f "$HOME/.p10k.zsh" ] || todo "run ${DIM}p10k configure${RESET} in a new terminal"
+if [ -d /Applications/Glaido.app ]; then
+  ok "Glaido installed"
+else
+  todo "install Glaido from ${DIM}https://glaido.com${RESET} (no Homebrew cask), then grant it Microphone, Accessibility and Input Monitoring"
+fi
 todo "drag ~/Code into the Finder sidebar"
 todo "1Password, Rider settings"
 emit ''

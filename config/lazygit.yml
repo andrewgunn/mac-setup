@@ -1,0 +1,89 @@
+# lazygit settings. run.sh links lazygit's config file (in
+# ~/Library/Application Support) at this one. Cmd+Shift+G opens it as a Herdr
+# popup over the current pane's directory; `lazygit` in any terminal is the same
+# thing. Every key is documented at
+# https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md
+gui:
+  # Nothing on screen that isn't the repo: no command log, no bottom line, no
+  # panel jump hints, no random tips, no list footer.
+  showCommandLog: false
+  showBottomLine: false
+  showPanelJumps: false
+  showRandomTip: false
+  showListFooter: false
+  showNumstatInFilesView: true
+  showFileTree: true
+  sidePanelWidth: 0.3
+  shrinkSidePanelsToContent: true
+  expandFocusedSidePanel: true
+  expandedSidePanelWeight: 8
+  splitDiff: auto
+  nerdFontsVersion: "3"
+  tabWidth: 4
+  # Side-by-side above 110 columns, stacked below, so a Herdr popup and a full
+  # window both read properly.
+  portraitMode: auto
+  portraitModeAutoMaxWidth: 110
+  portraitModeAutoMinHeight: 30
+  sidePanels:
+    - [status]
+    - [files]
+    - [stash, branches, commits]
+  # Whose branch is whose at a glance, once several agents are pushing.
+  branchColorPatterns:
+    "^me/": "#5fd7ff"
+    "^codex/": "#c678dd"
+    "^claude/": "#e5c07b"
+    "^grok/": "#00e5a8"
+    "^cursor/": "#61afef"
+    "^feat/": "#98c379"
+    "^fix/": "#e06c75"
+    "^main$": "#98c379"
+
+git:
+  log:
+    showGraph: never
+  autoFetch: true
+  autoRefresh: true
+  diffContextSize: 3
+  # delta renders the diffs: syntax highlighting, both line numbers, and the
+  # same Atom One Dark palette as Neovim. `-` cycles to a word-level diff.
+  diffRenderers:
+    - name: delta
+      command: >-
+        delta --dark --paging=never --true-color=always --syntax-theme=TwoDark
+        --tabs=4 --relative-paths
+        --file-style="bold #abb2bf" --file-decoration-style="#3e4452 ul"
+        --hunk-header-style="line-number syntax"
+        --hunk-header-decoration-style="#3e4452 ul"
+        --hunk-header-line-number-style="#61afef"
+        --line-numbers
+        --line-numbers-left-format="{nm:>3} " --line-numbers-right-format="{np:>3} │ "
+        --line-numbers-left-style="#5c6370" --line-numbers-right-style="#5c6370"
+        --line-numbers-zero-style="#5c6370"
+        --line-numbers-minus-style="#e06c75" --line-numbers-plus-style="#98c379"
+        --minus-style="syntax #49282e" --minus-emph-style="syntax #753235"
+        --plus-style="syntax #243d2f" --plus-emph-style="syntax #2b5c37"
+    - type: rawGit
+      args: [--color-words]
+      name: color-words
+
+# `b` from the files, status or stash panel: type or pick a branch, check it out.
+customCommands:
+  - key: b
+    context: "files, status, stash"
+    description: "Checkout branch"
+    loadingText: "Checking out"
+    prompts:
+      - type: input
+        title: "Checkout:"
+        key: Branch
+        suggestions:
+          preset: branches
+    command: git checkout {{.Form.Branch | quote}}
+
+quitOnTopLevelReturn: true
+disableStartupPopups: true
+# Homebrew owns the version; config/brew-autoupdate.sh keeps it current.
+update:
+  method: never

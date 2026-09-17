@@ -41,6 +41,11 @@ over two minutes also ring the bell and post a notification.
 - .NET global tools, Claude Code, Rokit
 - Oh My Zsh with zsh-syntax-highlighting and powerlevel10k, using the finished
   `config/p10k.zsh` so the `p10k configure` wizard never runs
+- [Herdr](#herdr): its config, the state hooks for Claude Code, Cursor and
+  opencode, zsh completions, and the skill that lets an agent drive Herdr itself
+- [Neovim, lazygit and the shell around them](#neovim-lazygit-and-the-shell):
+  LazyVim with its plugins installed up front, lazygit with delta diffs, and
+  `z`, `^R`, `bat` and `eza` wired into zsh
 - System defaults: dark mode, Finder list view with folders first, tap to
   click, auto-hiding Dock, screenshots to Downloads, no auto-capitalisation
 - Rectangle shortcuts, Stats, SmoothScroll preferences and the Ghostty config
@@ -111,6 +116,104 @@ stays put across runs and overrides the repo. ⌘, opens the local file; ⌘⇧,
 reloads both. `ghostty +show-config` prints what's actually in force, and
 `run.sh` runs `ghostty +validate-config` after writing the include.
 
+The rest of that file is there for [Herdr](#herdr). ⌘T, ⌘W, ⌘K, ⌘E and ⌘⇧G are
+unbound so they reach Herdr instead of the terminal — which means **⌘W no longer
+closes a Ghostty surface**, so close the window instead. `macos-option-as-alt`
+is set to `right` only: Herdr's ⌥↑ / ⌥↓ need a real Alt, while the left Option
+still types `#` (⌥3) and `€` (⌥2) on a British layout. The palette is Atom One
+Dark on `#1D1E27`, the exact background the Neovim theme paints, so the editor
+sits flush in the terminal with no seam.
+
+## Herdr
+
+[Herdr](https://herdr.dev) is a terminal multiplexer built for coding agents:
+one window, a sidebar of workspaces, tabs and panes, and a colour per agent
+saying whether it's working, blocked or finished. It outlives the window — close
+the terminal, reopen it, run `herdr`, and every agent is still there in the same
+layout. The whole setup follows
+[Datalumina's Herdr guide](https://learn.datalumina.com/docs/herdr).
+
+`config/herdr.toml` is symlinked to `~/.config/herdr/config.toml`, because Herdr
+has no include directive the way Ghostty and git do. That makes the repo file
+the only copy — edits here and the ones Herdr writes itself (the onboarding
+flag, `herdr config reset-keys`) land in the same file, so there's nothing to
+keep in sync. `run.sh` checks it with `herdr config check` and reloads a running
+server.
+
+| | |
+|---|---|
+| New tab | ⌘T |
+| Close tab | ⌘W |
+| Go to workspace, tab or agent | ⌘K |
+| Previous / next tab | ^← / ^→ |
+| Previous / next workspace | ^↑ / ^↓ |
+| Cycle panes | ⌥↑ / ⌥↓ |
+| lazygit over this pane's folder | ⌘⇧G |
+| Everything else | `§` then a key |
+
+`§` is the prefix, the key left of 1 on a British keyboard; `§ c`, `§ v`,
+`§ -`, `§ z`, `§ q` and the rest are Herdr's defaults.
+
+`run.sh` installs the state hooks for the agents on this Mac — Claude Code,
+Cursor and opencode — so the sidebar knows what each one is doing.
+`herdr integration status` lists every agent Herdr supports and versions what's
+installed, so an outdated hook is replaced on the next run. A hook is written
+into the agent's own config directory, which doesn't exist until that agent has
+run at least once — so opencode is usually reported as still to do, and
+`herdr integration install opencode` after the first `opencode` finishes it.
+
+The **herdr skill** is what lets an agent drive Herdr itself: split a pane,
+start a second agent in it, hand it work, read back what it said. `run.sh`
+installs it at user level rather than per project, so every repo gets it:
+
+```
+npx skills add herdrdev/herdr --skill herdr \
+  --agent claude-code --agent cursor --agent opencode --global --yes
+```
+
+It lands in `~/.agents/skills/herdr`, symlinked to `~/.claude/skills/herdr` for
+Claude Code and read in place by Cursor and OpenCode. `--yes` and the explicit
+`--agent` list matter: without them it asks about scope and agents, which would
+stall an unattended run. `npx skills list -g` shows what's installed. The skill
+only activates inside a Herdr pane (it looks for `HERDR_ENV=1`), so it costs
+nothing anywhere else. If that npm package ever moves, `herdr --skill` prints
+the same instructions to paste into an agent's global instructions instead.
+
+Not installed, because it's one plugin and a 200MB toolchain:
+`brew install go && herdr plugin install kryptamine/herdr-auto-title`, which
+names each tab after what the agent in it is doing.
+
+## Neovim, lazygit and the shell
+
+The three tools that live inside Herdr's panes. Each is symlinked from `config/`
+for the same reason as Herdr: none of them has an include directive.
+
+- **Neovim** (`config/nvim` → `~/.config/nvim`) is
+  [LazyVim](https://www.lazyvim.org) set up to be read like VS Code rather than
+  driven like vim: neo-tree open on the left, single click previews a file in
+  one reused tab, double click or Enter pins it, ^click jumps to a definition,
+  `^P` is Quick Open and `/` searches the project (`g/` searches the file).
+  Atom One Dark on Ghostty's background. `run.sh` runs
+  `nvim --headless "+Lazy! sync" +qa` so the first launch isn't a two-minute
+  wait; `:Lazy sync` updates after that. `tree-sitter-cli` is in the `Brewfile`
+  because nvim-treesitter requires it — from Homebrew it's upgraded with
+  everything else instead of mason keeping a second copy. Mason still fetches
+  the language servers and formatters itself, in the background, the first time
+  a file of that language is opened; `:Mason` shows where it's got to. LazyVim
+  writes its `lazy-lock.json` into `config/nvim`, which is the repo, so plugin
+  versions are committed with everything else.
+- **lazygit** (`config/lazygit.yml` → `~/Library/Application Support/lazygit/`)
+  with [delta](https://github.com/dandavison/delta) rendering the diffs, no
+  command log or status bar, and a colour per branch prefix so `claude/`,
+  `cursor/` and `feat/` branches are distinguishable at a glance. `b` from the
+  files panel checks out a branch. ⌘⇧G opens it as a Herdr popup over whatever
+  folder the current pane is in.
+- **The shell** (`config/shell.zsh`, sourced from `~/.zshrc`): `z koala2` jumps
+  to a folder by name and `zi` picks one with fzf ([zoxide](https://github.com/ajeetdsouza/zoxide)),
+  `^R` searches history and `^T` files, `ls`/`ll`/`tree` are `eza` and `cat` is
+  `bat`. Both drop back to plain output when piped, so nothing scripted
+  changes.
+
 ## Command Line Tools
 
 If `brew doctor` says a newer Command Line Tools release is available while
@@ -141,7 +244,7 @@ machine, which would abandon the rest of the script.
 - **Licences**: SmoothScroll (kept out of the repo), Beyond Compare, Rider,
   Bambu Studio
 - **Sign-ins** happen through each app: 1Password, Slack, Chrome, Google
-  Drive, Docker, `gh auth login`, `az login`, Claude
+  Drive, Docker, `gh auth login`, `az login`, Claude, Glaido
 - **`~/.claude`** holds Claude Code settings, memory and project notes
 - **`~/.ollama`** models are large and re-downloadable; skip them
 - **`~/Downloads`**, since Finder and screenshots both land there
@@ -151,6 +254,14 @@ machine, which would abandon the rest of the script.
 Each of these resisted automation for a stated reason. If the reason stops
 being true, move it into `run.sh`. The end of a run lists them, ticking the
 ones it can detect.
+
+### Glaido
+
+[Glaido](https://glaido.com) is a `.dmg` from its own site with no Homebrew
+cask, and it needs Microphone, Accessibility and Input Monitoring permissions
+granted by hand plus a sign-in. Download it, drag it to Applications, then work
+through its setup wizard. It does the same job as Wispr Flow, which is still in
+the `Brewfile` — drop whichever one loses.
 
 ### Finder sidebar
 
@@ -183,5 +294,7 @@ The repo is public and the licence lives in `com.galambalazs.SmoothScroll`, so
 
 ## References
 
+- [Herdr, Ghostty, Neovim and lazygit](https://learn.datalumina.com/docs/herdr),
+  the guide this terminal setup follows
 - [Mac setup for web development](https://www.robinwieruch.de/mac-setup-web-development/)
 - [.NET MAUI development environment set up walkthrough](https://khalidabuhakmeh.com/dotnet-maui-development-environment-set-up-walkthrough)

@@ -1,0 +1,76 @@
+# Herdr settings. run.sh links ~/.config/herdr/config.toml at this file, so a
+# `git pull` reaches the machine. Herdr has no include directive, so it's a
+# symlink rather than a one-line include: edits made here and edits Herdr makes
+# itself (onboarding, `herdr config reset-keys`) are the same file.
+#
+# `herdr config check` validates it and `herdr server reload-config` applies it
+# to the running server without restarting anything.
+
+onboarding = false
+
+[theme]
+name = "catppuccin"
+auto_switch = false
+
+# The state colours carry the whole sidebar, so they're worth being deliberate
+# about: one blue for "your turn" (blocked or finished-but-unseen), violet for
+# "still working". Anything violet is busy; anything blue wants you.
+[theme.custom]
+red = "#4e82ef"     # blocked, needs input
+teal = "#4e82ef"    # done, not seen yet
+yellow = "#a78bfa"  # working
+active_row_bg = "#45475a"
+
+[ui]
+agent_panel_sort = "priority"
+prompt_new_tab_name = false
+status_indicators = "dots"
+copy_on_select = false
+
+[ui.toast]
+delivery = "system"
+
+# Two lines per sidebar entry with a blank line between: state and workspace on
+# the first, the tab name (agents) or branch (spaces) on the second.
+[ui.sidebar.agents]
+row_gap = 1
+rows = [
+  ["state_icon", "workspace"],
+  ["tab"],
+]
+
+[ui.sidebar.spaces]
+row_gap = 1
+rows = [
+  ["state_icon", "workspace"],
+  ["branch"],
+]
+
+[ui.sound]
+enabled = false
+
+# § is the key left of 1 on a British keyboard, so the prefix costs nothing.
+# The Cmd shortcuts are the ones that matter day to day, and they only reach
+# Herdr because config/ghostty unbinds them in the terminal first.
+[keys]
+prefix = "§"
+new_tab = ["prefix+c", "cmd+t"]
+close_tab = ["prefix+shift+x", "cmd+w"]
+goto = ["prefix+g", "cmd+k"]
+previous_tab = ["prefix+p", "ctrl+left"]
+next_tab = ["prefix+n", "ctrl+right"]
+previous_workspace = "ctrl+up"
+next_workspace = "ctrl+down"
+cycle_pane_next = ["prefix+tab", "alt+up"]
+cycle_pane_previous = ["prefix+shift+tab", "alt+down"]
+
+# lazygit over the current pane's directory, as a popup rather than a pane, so
+# it closes back to exactly what was there. `exec` means quitting lazygit closes
+# the popup instead of dropping to a shell inside it.
+[[keys.command]]
+key = ["cmd+shift+g", "prefix+d"]
+type = "popup"
+command = 'cd "${HERDR_ACTIVE_PANE_CWD:-.}" && exec lazygit'
+description = "Git status"
+width = "90%"
+height = "85%"
