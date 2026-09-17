@@ -926,6 +926,68 @@ else
 fi
 
 # ==============================================================================
+# GladiaFlow (dictation; no Homebrew cask, but its releases are on GitHub)
+# ==============================================================================
+# The .dmg is a versioned release asset rather than a button on a marketing
+# site, so this is scriptable where most dictation apps aren't. The app is
+# notarized under Gladia's Developer ID and curl doesn't set the quarantine
+# flag a browser download would, so it opens without a Gatekeeper prompt and
+# nothing here has to strip anything. The microphone and accessibility grants
+# and the Gladia API key are manual, and listed at the end of the run.
+section "GladiaFlow"
+GLADIAFLOW_APP=/Applications/GladiaFlow.app
+GLADIAFLOW_REPO=gladiaio/gladiaflow
+
+gladiaflow_installed_version() {
+  defaults read "$GLADIAFLOW_APP/Contents/Info" CFBundleShortVersionString 2>/dev/null
+}
+
+# Download the universal .dmg from the latest release, mount it read-only, copy
+# the app out, unmount. $1 is the URL, found by the caller.
+gladiaflow_install() {   # gladiaflow_install <dmg url>
+  local url="$1" work dmg mount rc=0
+  work=$(mktemp -d "${TMPDIR:-/tmp}/gladiaflow.XXXXXX")
+  dmg="$work/GladiaFlow.dmg"
+  mount="$work/mnt"
+  mkdir -p "$mount"
+  curl -fsSL -o "$dmg" "$url" || rc=1
+  if [ "$rc" = 0 ]; then
+    hdiutil attach -nobrowse -readonly -quiet -mountpoint "$mount" "$dmg" || rc=1
+  fi
+  if [ "$rc" = 0 ]; then
+    rm -rf "$GLADIAFLOW_APP"
+    cp -R "$mount/GladiaFlow.app" /Applications/ || rc=1
+    hdiutil detach -quiet "$mount" || true
+  fi
+  rm -rf "$work"
+  return "$rc"
+}
+
+# The API answers with the release JSON; the asset is the only universal .dmg
+# in it. A network failure here shouldn't fail the run: the app is a nice to
+# have, and the manual steps at the end will say it's missing.
+GLADIAFLOW_JSON=$(curl -fsSL "https://api.github.com/repos/$GLADIAFLOW_REPO/releases/latest" 2>/dev/null || true)
+GLADIAFLOW_LATEST=$(printf '%s' "$GLADIAFLOW_JSON" |
+  grep -o '"tag_name"[^,]*' | sed -n 's/.*"v\{0,1\}\([0-9][^"]*\)".*/\1/p' | head -1)
+GLADIAFLOW_URL=$(printf '%s' "$GLADIAFLOW_JSON" |
+  grep -o '"browser_download_url": *"[^"]*universal\.dmg"' | sed 's/.*"\(https[^"]*\)"/\1/' | head -1)
+GLADIAFLOW_HAVE=$(gladiaflow_installed_version)
+
+if [ -z "$GLADIAFLOW_URL" ]; then
+  if [ -n "$GLADIAFLOW_HAVE" ]; then
+    ok "installed, $GLADIAFLOW_HAVE; couldn't reach GitHub to check for a newer one"
+  else
+    fail "couldn't find a universal .dmg in the latest $GLADIAFLOW_REPO release"
+  fi
+elif [ "$GLADIAFLOW_HAVE" = "$GLADIAFLOW_LATEST" ]; then
+  ok "installed, $GLADIAFLOW_HAVE (latest)"
+elif [ -n "$GLADIAFLOW_HAVE" ]; then
+  step "Update GladiaFlow $GLADIAFLOW_HAVE to $GLADIAFLOW_LATEST" gladiaflow_install "$GLADIAFLOW_URL"
+else
+  step "Install GladiaFlow $GLADIAFLOW_LATEST" gladiaflow_install "$GLADIAFLOW_URL"
+fi
+
+# ==============================================================================
 # GitHub: SSH key, CLI sign-in, key upload
 # ==============================================================================
 section "GitHub"
@@ -1044,10 +1106,10 @@ else
   todo "System Settings > Accessibility > Display: larger pointer"
 fi
 [ -f "$HOME/.p10k.zsh" ] || todo "run ${DIM}p10k configure${RESET} in a new terminal"
-if [ -d /Applications/Glaido.app ]; then
-  ok "Glaido installed"
+if [ -d "$GLADIAFLOW_APP" ]; then
+  todo "open GladiaFlow once: Microphone and Accessibility, then a Gladia API key from ${DIM}https://app.gladia.io${RESET}"
 else
-  todo "install Glaido from ${DIM}https://glaido.com${RESET} (no Homebrew cask), then grant it Microphone, Accessibility and Input Monitoring"
+  todo "install GladiaFlow: ${DIM}https://github.com/$GLADIAFLOW_REPO/releases${RESET}"
 fi
 todo "drag ~/Code into the Finder sidebar"
 todo "1Password, Rider settings"

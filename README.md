@@ -38,7 +38,7 @@ over two minutes also ring the bell and post a notification.
 - Reinstalls the Command Line Tools if they have no package receipt
 - Git from `config/gitconfig` (Beyond Compare as diff and merge tool,
   `git lg`, prune on fetch) plus the global ignore file
-- .NET global tools, Claude Code, Rokit
+- .NET global tools, Claude Code, Rokit, GladiaFlow
 - Oh My Zsh with zsh-syntax-highlighting and powerlevel10k, using the finished
   `config/p10k.zsh` so the `p10k configure` wizard never runs
 - [Herdr](#herdr): its config, the state hooks for Claude Code, Cursor and
@@ -249,7 +249,7 @@ machine, which would abandon the rest of the script.
 - **Licences**: SmoothScroll (kept out of the repo), Beyond Compare, Rider,
   Bambu Studio
 - **Sign-ins** happen through each app: 1Password, Slack, Chrome, Google
-  Drive, Docker, `gh auth login`, `az login`, Claude, Glaido
+  Drive, Docker, `gh auth login`, `az login`, Claude, and a Gladia API key
 - **`~/.claude`** holds Claude Code settings, memory and project notes
 - **`~/.ollama`** models are large and re-downloadable; skip them
 - **`~/Downloads`**, since Finder and screenshots both land there
@@ -260,13 +260,19 @@ Each of these resisted automation for a stated reason. If the reason stops
 being true, move it into `run.sh`. The end of a run lists them, ticking the
 ones it can detect.
 
-### Glaido
+### GladiaFlow permissions and API key
 
-[Glaido](https://glaido.com) is a `.dmg` from its own site with no Homebrew
-cask, and it needs Microphone, Accessibility and Input Monitoring permissions
-granted by hand plus a sign-in. Download it, drag it to Applications, then work
-through its setup wizard. It does the same job as Wispr Flow, which is still in
-the `Brewfile` — drop whichever one loses.
+[GladiaFlow](https://github.com/gladiaio/gladiaflow) itself is installed by
+`run.sh`: there's no Homebrew cask, but its releases are on GitHub, so the
+universal `.dmg` is fetched, mounted and copied to `/Applications`, and a later
+run replaces it when the release tag moves past the installed version. It's
+notarized under Gladia's Developer ID, so it opens without a Gatekeeper prompt.
+
+What's left can't be scripted: open it once to grant Microphone and
+Accessibility, and paste an API key from [app.gladia.io](https://app.gladia.io).
+The app is free and MIT-licensed; transcription is billed against that key.
+It does the same job as Wispr Flow, which is still in the `Brewfile` — drop
+whichever one loses.
 
 ### Finder sidebar
 
