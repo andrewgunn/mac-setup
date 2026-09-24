@@ -60,7 +60,8 @@ Mac but not in the repo?) and `task autoupdate-status`.
 ## Homebrew
 
 A LaunchAgent, `com.andrewgunn.brew-autoupdate`, runs
-`config/brew-autoupdate.sh` every 12 hours and at login: `brew update`,
+`config/brew-autoupdate.sh` daily at 04:00 (on waking, if the Mac was asleep
+then), so upgrades land out of working hours: `brew update`,
 `brew upgrade --formula`, `brew upgrade --cask`, `brew cleanup`. Two things are
 deliberately skipped:
 

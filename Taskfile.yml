@@ -33,5 +33,5 @@ tasks:
   autoupdate-status:
     desc: State of the background Homebrew upgrade agent
     cmds:
-      - launchctl print gui/$(id -u)/com.andrewgunn.brew-autoupdate | grep -E 'state =|runs =|last exit|run interval'
+      - launchctl print gui/$(id -u)/com.andrewgunn.brew-autoupdate | grep -E 'state =|runs =|last exit|Hour|Minute'
       - tail -n 20 ~/Library/Logs/brew-autoupdate.log

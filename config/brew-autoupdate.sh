@@ -1,7 +1,8 @@
 #!/bin/sh
 # Background Homebrew upgrades. run.sh installs this to
 # ~/Library/Application Support/brew-autoupdate/ and schedules it with a
-# LaunchAgent (com.andrewgunn.brew-autoupdate) every 12 hours and at login.
+# LaunchAgent (com.andrewgunn.brew-autoupdate) daily at 04:00, or on waking if
+# the Mac was asleep then.
 #
 # Two things are deliberately left alone:
 #

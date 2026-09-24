@@ -509,7 +509,8 @@ fi
 # ==============================================================================
 # Homebrew background upgrades
 # ==============================================================================
-# A LaunchAgent runs config/brew-autoupdate.sh every 12 hours and at login. It
+# A LaunchAgent runs config/brew-autoupdate.sh daily at 04:00 (or on waking, if
+# the Mac was asleep then), out of working hours. It
 # replaces the domt4/autoupdate tap, which had no way to stop Homebrew 6 from
 # upgrading self-updating casks (quitting Ghostty, Claude, 1Password... to do
 # it), and whose --sudo option was the source of the background password
@@ -546,10 +547,13 @@ cat > "$BAU_PLIST" <<PLIST
   <array>
     <string>$BAU_DIR/brew-autoupdate</string>
   </array>
-  <key>RunAtLoad</key>
-  <true/>
-  <key>StartInterval</key>
-  <integer>43200</integer>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>4</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
   <key>StandardOutPath</key>
   <string>$BAU_LOG</string>
   <key>StandardErrorPath</key>
@@ -570,7 +574,7 @@ if launchctl print "gui/$(id -u)/$BAU_LABEL" 2>/dev/null | grep -q 'state = runn
   fail "brew-autoupdate agent not reloaded: a run is in progress, re-run later"
 else
   launchctl bootout "gui/$(id -u)/$BAU_LABEL" 2>/dev/null
-  step "Load the LaunchAgent (12-hourly and at login)" launchctl bootstrap "gui/$(id -u)" "$BAU_PLIST"
+  step "Load the LaunchAgent (daily at 04:00)" launchctl bootstrap "gui/$(id -u)" "$BAU_PLIST"
 fi
 
 # Failed runs would otherwise be silent. Warn at login shell startup instead;
