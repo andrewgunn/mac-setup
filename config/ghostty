@@ -37,8 +37,13 @@ keybind = super+shift+g=unbind
 
 # Herdr's alt+↑ / alt+↓ cycle panes, which needs a real Alt. Only the right
 # Option is given up: on a British layout the left one still types # (⌥3),
-# € (⌥2) and the rest, and ⌥← / ⌥→ / ⌥⌫ stay word-wise either way.
+# € (⌥2) and the rest, and ⌥← / ⌥→ stay word-wise either way.
 macos-option-as-alt = right
+
+# The left Option isn't Alt, so ⌥⌫ would send a bare backspace and delete one
+# character. Send what Alt+Backspace does, ESC DEL, which zsh and most editors
+# take as "delete the word before the cursor".
+keybind = alt+backspace=text:\x1b\x7f
 
 # Room to breathe around the grid, a bar cursor that doesn't blink, and enough
 # scrollback to page back through a long agent run.
