@@ -827,6 +827,7 @@ ok "zshrc: bat, eza, fd and fzf aliased, ${DIM}z${RESET} jumps to folders, ${DIM
 # and the skill that lets an agent drive Herdr itself.
 section "Herdr"
 link_config config/herdr.toml "$HOME/.config/herdr/config.toml"
+link_config config/herdr-layout.sh "$HOME/.config/herdr/layout.sh"
 if command -v herdr >/dev/null 2>&1; then
   if HERDR_OUT=$(herdr config check 2>&1); then
     ok "config accepted by ${DIM}herdr config check${RESET}"

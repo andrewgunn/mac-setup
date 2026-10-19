@@ -27,8 +27,10 @@ prompt_new_tab_name = false
 status_indicators = "dots"
 copy_on_select = false
 
+# Ghostty shows the "agent finished" notifications, so they carry its icon and
+# clicking one brings Ghostty forward; "system" posts them as Herdr itself.
 [ui.toast]
-delivery = "system"
+delivery = "terminal"
 
 # Two lines per sidebar entry with a blank line between: state and workspace on
 # the first, the tab name (agents) or branch (spaces) on the second.
@@ -54,8 +56,11 @@ enabled = false
 # Herdr because config/ghostty unbinds them in the terminal first.
 [keys]
 prefix = "§"
-new_tab = ["prefix+c", "cmd+t"]
+# Cmd+T is the laid-out tab below; § c is still a bare one.
+new_tab = "prefix+c"
 close_tab = ["prefix+shift+x", "cmd+w"]
+# § Shift+N is the repo picker below; the sidebar's "new" is still a bare one.
+new_workspace = ""
 goto = ["prefix+g", "cmd+k"]
 previous_tab = ["prefix+p", "ctrl+left"]
 next_tab = ["prefix+n", "ctrl+right"]
@@ -64,9 +69,9 @@ next_workspace = "ctrl+down"
 cycle_pane_next = ["prefix+tab", "alt+up"]
 cycle_pane_previous = ["prefix+shift+tab", "alt+down"]
 
-# lazygit over the current pane's directory, as a popup rather than a pane, so
-# it closes back to exactly what was there. `exec` means quitting lazygit closes
-# the popup instead of dropping to a shell inside it.
+# lazygit and Neovim over the current pane's directory, as popups rather than
+# panes, so each gets the whole screen and closes back to exactly what was
+# there. `exec` means quitting closes the popup instead of dropping to a shell.
 [[keys.command]]
 key = ["cmd+shift+g", "prefix+d"]
 type = "popup"
@@ -74,3 +79,31 @@ command = 'cd "${HERDR_ACTIVE_PANE_CWD:-.}" && exec lazygit'
 description = "Git status"
 width = "90%"
 height = "85%"
+
+[[keys.command]]
+key = "cmd+shift+e"
+type = "popup"
+command = 'cd "${HERDR_ACTIVE_PANE_CWD:-.}" && exec nvim .'
+description = "Editor"
+width = "95%"
+height = "90%"
+
+# New tabs and workspaces start Claude. Herdr has no tab templates, so these run
+# config/herdr-layout.sh, which run.sh links next to this file. The tab one asks
+# for a branch and gives the tab its own worktree; the workspace one asks which
+# repo.
+[[keys.command]]
+key = "cmd+t"
+type = "popup"
+command = 'exec "$HOME/.config/herdr/layout.sh" tab'
+description = "New Claude tab on a worktree"
+width = "60%"
+height = "20%"
+
+[[keys.command]]
+key = "prefix+shift+n"
+type = "popup"
+command = 'exec "$HOME/.config/herdr/layout.sh" workspace'
+description = "New workspace in a repo"
+width = "60%"
+height = "60%"
