@@ -71,7 +71,7 @@ deliberately skipped:
   quitting the running app to do it. `HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS`
   restores the old behaviour and the apps update themselves.
 - **`.pkg` casks** (`SUDO_CASKS` in the script: `dotnet-sdk`, `naps2`,
-  `wifiman`). They need root, and a launchd job has nowhere to ask for a
+  `tailscale-app`, `wifiman`). They need root, and a launchd job has nowhere to ask for a
   password, so `run.sh` upgrades them while you're at the keyboard. CI fails if
   a `.pkg` cask is added without joining that list. Note the .NET SDK upgrade
   removes every `com.microsoft.dotnet.*` package first, older runtimes included.
@@ -250,7 +250,8 @@ machine, which would abandon the rest of the script.
 - **Licences**: SmoothScroll (kept out of the repo), Beyond Compare, Rider,
   Bambu Studio
 - **Sign-ins** happen through each app: 1Password, Slack, Chrome, Google
-  Drive, Docker, `gh auth login`, `az login`, Claude, and a Gladia API key
+  Drive, Docker, Tailscale, `gh auth login`, `az login`, Claude, and a Gladia
+  API key
 - **`~/.claude`** holds Claude Code settings, memory and project notes
 - **`~/.ollama`** models are large and re-downloadable; skip them
 - **`~/Downloads`**, since Finder and screenshots both land there

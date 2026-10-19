@@ -20,7 +20,7 @@
 # prints a warning at the next shell start.
 set -u
 
-SUDO_CASKS="dotnet-sdk naps2 wifiman"
+SUDO_CASKS="dotnet-sdk naps2 tailscale-app wifiman"
 LOG="$HOME/Library/Logs/brew-autoupdate.log"
 
 if [ "${1:-}" = "--print-sudo-casks" ]; then
