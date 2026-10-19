@@ -264,8 +264,12 @@ notify() {
   fi
 }
 
-SUDO_KEEPALIVE=''
-cleanup() { [ -n "$SUDO_KEEPALIVE" ] && kill "$SUDO_KEEPALIVE" 2>/dev/null; set_title ''; }
+SUDO_KEEPALIVE='' SUDO_DIR=''
+cleanup() {
+  [ -n "$SUDO_KEEPALIVE" ] && kill "$SUDO_KEEPALIVE" 2>/dev/null
+  [ -n "$SUDO_DIR" ] && rm -rf "$SUDO_DIR"
+  set_title ''
+}
 on_interrupt() {
   [ "$TTY" = 1 ] && printf '\r\e[J' > /dev/tty
   emit ''
@@ -312,17 +316,36 @@ fi
 # askpass helper in the environment (the old autoupdate tap left one behind)
 # makes every sudo fail with "no password was provided" instead.
 unset SUDO_ASKPASS
-# Ask for the password once, up front, and keep the sudo ticket alive until the
-# script exits. Otherwise Homebrew, each .pkg cask and the keychain each prompt
-# in turn, minutes apart, and a missed prompt fails that step.
+# Ask for the password once, up front. A sudo ticket alone doesn't cover the
+# run: Homebrew runs `sudo --reset-timestamp` the first time each brew process
+# needs root, so every .pkg cask prompted again, on /dev/tty underneath a
+# folded step's spinner, where it just looked stuck. So the password also goes
+# to an askpass helper, and Homebrew (and its installer) pass -A to sudo
+# whenever SUDO_ASKPASS is set. Both live in a 0700 temp dir that's removed on
+# exit, and the export only reaches this script's children.
 info "your password is needed once, for sudo (Homebrew, .pkg installers)"
-if sudo -p "  $CYAN?$RESET Password: " -v; then
-  ok "sudo ticket held for the rest of the run"
-else
+SUDO_PW=''
+for _ in 1 2 3; do
+  printf '  %s?%s Password: ' "$CYAN" "$RESET" > /dev/tty
+  IFS= read -rs SUDO_PW < /dev/tty
+  printf '\n' > /dev/tty
+  printf '%s\n' "$SUDO_PW" | sudo -S -p '' -v 2>/dev/null && break
+  SUDO_PW=''
+  warn "that password didn't work"
+done
+if [ -z "$SUDO_PW" ]; then
   fail "sudo refused"
   exit 1
 fi
-( while kill -0 "$$" 2>/dev/null; do sudo -n true 2>/dev/null; sleep 60; done ) &
+SUDO_DIR=$(mktemp -d "${TMPDIR:-/tmp}/mac-setup-sudo.XXXXXX")
+( umask 077; printf '%s\n' "$SUDO_PW" > "$SUDO_DIR/pw" )
+printf '#!/bin/sh\ncat "%s/pw"\n' "$SUDO_DIR" > "$SUDO_DIR/askpass"
+chmod 700 "$SUDO_DIR/askpass"
+export SUDO_ASKPASS="$SUDO_DIR/askpass"
+unset SUDO_PW
+ok "password held for the rest of the run"
+# Keep the ticket alive too, for this script's own plain `sudo` calls.
+( while kill -0 "$$" 2>/dev/null; do sudo -A -v 2>/dev/null; sleep 60; done ) &
 SUDO_KEEPALIVE=$!
 
 # ==============================================================================
