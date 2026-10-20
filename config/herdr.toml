@@ -21,6 +21,9 @@ teal = "#4e82ef"    # done, not seen yet
 yellow = "#a78bfa"  # working
 active_row_bg = "#45475a"
 
+# Links open with Ctrl+click, not iTerm's Cmd+click: Herdr captures the mouse,
+# and mouse reports don't carry Cmd. `mouse_capture = false` would hand links
+# back to Ghostty's Cmd+click, but costs clicking tabs and dragging splits.
 [ui]
 agent_panel_sort = "priority"
 prompt_new_tab_name = false

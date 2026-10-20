@@ -760,7 +760,10 @@ ok "Rectangle shortcuts: ^⌥ halves/maximise, ^⌥1-3 thirds, ^⌥⇧ two-third
 
 pref eu.exelban.Stats Battery_state -bool false
 pref eu.exelban.Stats LaunchAtLoginNext -bool true
-prefs_done "Stats: launches at login, battery hidden"
+# Homebrew keeps Stats current (config/brew-autoupdate.sh). Its own "Silent"
+# updater once hung mid-install and left the menu bar empty until killed.
+pref eu.exelban.Stats update-interval -string Never
+prefs_done "Stats: launches at login, battery hidden, self-updater off"
 
 # Only these two behavioural keys: the SmoothScroll licence lives outside this
 # repo on purpose, so nothing here reads or writes it.
