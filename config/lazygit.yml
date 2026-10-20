@@ -29,17 +29,17 @@ gui:
     - [status]
     - [files]
     - [stash, branches, commits]
-  # Whose branch is whose at a glance, once several agents are pushing.
-  branchColorPatterns:
-    "^me/": "#5fd7ff"
-    "^codex/": "#c678dd"
-    "^claude/": "#e5c07b"
-    "^grok/": "#00e5a8"
-    "^cursor/": "#61afef"
-    "^feat/": "#98c379"
-    "^fix/": "#e06c75"
-    "^main$": "#98c379"
-
+  theme:
+    # Whose branch is whose at a glance, once several agents are pushing.
+    branchColorPatterns:
+      "^me/": "#5fd7ff"
+      "^codex/": "#c678dd"
+      "^claude/": "#e5c07b"
+      "^grok/": "#00e5a8"
+      "^cursor/": "#61afef"
+      "^feat/": "#98c379"
+      "^fix/": "#e06c75"
+      "^main$": "#98c379"
 git:
   log:
     showGraph: never
@@ -51,23 +51,10 @@ git:
   diffRenderers:
     - name: delta
       command: >-
-        delta --dark --paging=never --true-color=always --syntax-theme=TwoDark
-        --tabs=4 --relative-paths
-        --file-style="bold #abb2bf" --file-decoration-style="#3e4452 ul"
-        --hunk-header-style="line-number syntax"
-        --hunk-header-decoration-style="#3e4452 ul"
-        --hunk-header-line-number-style="#61afef"
-        --line-numbers
-        --line-numbers-left-format="{nm:>3} " --line-numbers-right-format="{np:>3} │ "
-        --line-numbers-left-style="#5c6370" --line-numbers-right-style="#5c6370"
-        --line-numbers-zero-style="#5c6370"
-        --line-numbers-minus-style="#e06c75" --line-numbers-plus-style="#98c379"
-        --minus-style="syntax #49282e" --minus-emph-style="syntax #753235"
-        --plus-style="syntax #243d2f" --plus-emph-style="syntax #2b5c37"
+        delta --dark --paging=never --true-color=always --syntax-theme=TwoDark --tabs=4 --relative-paths --file-style="bold #abb2bf" --file-decoration-style="#3e4452 ul" --hunk-header-style="line-number syntax" --hunk-header-decoration-style="#3e4452 ul" --hunk-header-line-number-style="#61afef" --line-numbers --line-numbers-left-format="{nm:>3} " --line-numbers-right-format="{np:>3} │ " --line-numbers-left-style="#5c6370" --line-numbers-right-style="#5c6370" --line-numbers-zero-style="#5c6370" --line-numbers-minus-style="#e06c75" --line-numbers-plus-style="#98c379" --minus-style="syntax #49282e" --minus-emph-style="syntax #753235" --plus-style="syntax #243d2f" --plus-emph-style="syntax #2b5c37"
     - type: rawGit
       args: [--color-words]
       name: color-words
-
 # `b` from the files, status or stash panel: type or pick a branch, check it out.
 customCommands:
   - key: b
@@ -81,7 +68,6 @@ customCommands:
         suggestions:
           preset: branches
     command: git checkout {{.Form.Branch | quote}}
-
 quitOnTopLevelReturn: true
 disableStartupPopups: true
 # Homebrew owns the version; config/brew-autoupdate.sh keeps it current.
