@@ -41,9 +41,10 @@ keybind = super+shift+g=unbind
 macos-option-as-alt = right
 
 # The left Option isn't Alt, so ⌥⌫ would send a bare backspace and delete one
-# character. Send what Alt+Backspace does, ESC DEL, which zsh and most editors
-# take as "delete the word before the cursor".
-keybind = alt+backspace=text:\x1b\x7f
+# character. Send Ctrl+W instead, "delete the word before the cursor" to zsh,
+# Claude Code and Neovim alike. Alt+Backspace's ESC DEL would do the same but
+# doesn't survive Herdr, which reads the ESC as a key of its own.
+keybind = alt+backspace=text:\x17
 
 # Room to breathe around the grid, a bar cursor that doesn't blink, and enough
 # scrollback to page back through a long agent run.
