@@ -67,6 +67,8 @@ cask 'minecraft'
 cask 'mongodb-compass'
 cask 'naps2'
 cask 'ngrok'
+# Bare 'orca' is an unrelated Plotly cask, so use the tap's full name
+cask 'stablyai/orca/orca'
 cask 'raspberry-pi-imager'
 cask 'rectangle'
 cask 'rider'
