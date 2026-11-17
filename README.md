@@ -70,7 +70,7 @@ deliberately skipped:
   Homebrew 6 upgrades these by default whenever the cask is ahead of the app,
   quitting the running app to do it. `HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS`
   restores the old behaviour and the apps update themselves.
-- **`.pkg` casks** (`SUDO_CASKS` in the script: `dotnet-sdk`, `naps2`,
+- **`.pkg` casks** (`SUDO_CASKS` in the script: `dotnet-sdk@10`, `naps2`,
   `tailscale-app`, `wifiman`). They need root, and a launchd job has nowhere to ask for a
   password, so `run.sh` upgrades them while you're at the keyboard. CI fails if
   a `.pkg` cask is added without joining that list. Note the .NET SDK upgrade

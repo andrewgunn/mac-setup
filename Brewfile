@@ -53,7 +53,9 @@ cask 'basecamp'
 cask 'beyond-compare'
 cask 'claude'
 cask 'cursor'
-cask 'dotnet-sdk'
+# Koala pins .NET 10 (LTS) in global.json; the unversioned cask would jump to
+# the newest SDK and its upgrade deletes every older one
+cask 'dotnet-sdk@10'
 cask 'elgato-control-center'
 cask 'font-fira-code'
 cask 'font-meslo-lg-nerd-font'

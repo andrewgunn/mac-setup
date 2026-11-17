@@ -661,7 +661,7 @@ if command -v dotnet >/dev/null 2>&1; then
   # shellcheck disable=SC2016  # $HOME is deliberately written literally
   append_once ~/.zprofile '\.dotnet/tools' 'export PATH="$PATH:$HOME/.dotnet/tools"'
 else
-  fail ".NET skipped: dotnet not on PATH (did the dotnet-sdk cask install?)"
+  fail ".NET skipped: dotnet not on PATH (did the dotnet-sdk@10 cask install?)"
 fi
 
 # ==============================================================================
