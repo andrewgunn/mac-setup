@@ -1142,6 +1142,13 @@ if [ -d "$GLADIAFLOW_APP" ]; then
 else
   todo "install GladiaFlow: ${DIM}https://github.com/$GLADIAFLOW_REPO/releases${RESET}"
 fi
+if [ -d /Applications/Docker.app ]; then
+  todo "OrbStack: open it, import from Docker Desktop, then ${DIM}brew uninstall --zap --cask docker-desktop${RESET}"
+elif [ "$(docker context show 2>/dev/null)" = orbstack ]; then
+  ok "OrbStack runs Docker"
+else
+  todo "open OrbStack once so it takes over the docker command"
+fi
 todo "drag ~/Code into the Finder sidebar"
 todo "1Password, Rider settings"
 emit ''

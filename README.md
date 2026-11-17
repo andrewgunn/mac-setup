@@ -66,7 +66,7 @@ then), so upgrades land out of working hours: `brew update`,
 deliberately skipped:
 
 - **Self-updating casks** (`auto_updates true`: Chrome, Ghostty, Claude,
-  1Password, Cursor, Slack, Docker Desktop and most of the `Brewfile`).
+  1Password, Cursor, Slack, OrbStack and most of the `Brewfile`).
   Homebrew 6 upgrades these by default whenever the cask is ahead of the app,
   quitting the running app to do it. `HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS`
   restores the old behaviour and the apps update themselves.
@@ -250,7 +250,7 @@ machine, which would abandon the rest of the script.
 - **Licences**: SmoothScroll (kept out of the repo), Beyond Compare, Rider,
   Bambu Studio
 - **Sign-ins** happen through each app: 1Password, Slack, Chrome, Google
-  Drive, Docker, Tailscale, `gh auth login`, `az login`, Claude, and a Gladia
+  Drive, OrbStack, Tailscale, `gh auth login`, `az login`, Claude, and a Gladia
   API key
 - **`~/.claude`** holds Claude Code settings, memory and project notes
 - **`~/.ollama`** models are large and re-downloadable; skip them
@@ -275,6 +275,17 @@ Accessibility, and paste an API key from [app.gladia.io](https://app.gladia.io).
 The app is free and MIT-licensed; transcription is billed against that key.
 It does the same job as Wispr Flow, which is still in the `Brewfile` — drop
 whichever one loses.
+
+### OrbStack
+
+OrbStack runs Docker instead of Docker Desktop. It's the same `docker` and
+`docker compose` commands, but memory is handed back when containers are idle,
+where Docker Desktop's VM held a fixed ~6GB and capped containers at the CPUs
+and RAM set in its settings. Open it once: it installs its helper (an admin
+prompt) and switches the `docker` context to `orbstack`. On a Mac that had
+Docker Desktop, accept its offer to import containers and volumes, then
+`brew uninstall --zap --cask docker-desktop`. Sign in with the business
+licence, since OrbStack is only free for personal use.
 
 ### Finder sidebar
 
