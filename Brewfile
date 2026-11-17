@@ -3,7 +3,8 @@ cask_args appdir: '/Applications'
 
 # CLIs
 brew 'actionlint'
-brew 'azure-cli'
+# Homebrew moved the Azure CLI from a formula to a cask in November 2026
+cask 'azure-cli'
 brew 'bat'
 brew 'cloudflared'
 brew 'eza'
