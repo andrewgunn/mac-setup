@@ -283,9 +283,12 @@ OrbStack runs Docker instead of Docker Desktop. It's the same `docker` and
 where Docker Desktop's VM held a fixed ~6GB and capped containers at the CPUs
 and RAM set in its settings. Open it once: it installs its helper (an admin
 prompt) and switches the `docker` context to `orbstack`. On a Mac that had
-Docker Desktop, accept its offer to import containers and volumes, then
-`brew uninstall --zap --cask docker-desktop`. Sign in with the business
-licence, since OrbStack is only free for personal use.
+Docker Desktop, accept its offer to import containers and volumes first, then
+`brew uninstall --cask docker-desktop`. Not `--zap`: that also deletes
+`~/.docker`, where OrbStack keeps its `docker` context and registry logins live.
+Once everything runs under OrbStack, reclaim Docker Desktop's VM disk (often
+100GB+) with `rm -rf ~/Library/Containers/com.docker.docker`. Sign in with the
+business licence, since OrbStack is only free for personal use.
 
 ### Finder sidebar
 

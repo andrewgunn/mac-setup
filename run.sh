@@ -1143,7 +1143,7 @@ else
   todo "install GladiaFlow: ${DIM}https://github.com/$GLADIAFLOW_REPO/releases${RESET}"
 fi
 if [ -d /Applications/Docker.app ]; then
-  todo "OrbStack: open it, import from Docker Desktop, then ${DIM}brew uninstall --zap --cask docker-desktop${RESET}"
+  todo "OrbStack: open it, import from Docker Desktop, then ${DIM}brew uninstall --cask docker-desktop${RESET} (not --zap; see the README)"
 elif [ "$(docker context show 2>/dev/null)" = orbstack ]; then
   ok "OrbStack runs Docker"
 else
