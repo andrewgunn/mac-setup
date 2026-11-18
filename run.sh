@@ -1055,11 +1055,19 @@ if command -v gh >/dev/null 2>&1; then
     case "$reply" in
       n|N|no|NO) info "skipped; later: gh auth login" ;;
       *)
-        if step -i "gh auth login" gh auth login --hostname github.com --git-protocol ssh --web --skip-ssh-key; then
+        if step -i "gh auth login" gh auth login --hostname github.com --git-protocol ssh --web --skip-ssh-key --scopes workflow; then
           GH_USER=$(gh api user -q .login 2>/dev/null)
         fi
         ;;
     esac
+  fi
+  if [ -n "$GH_USER" ]; then
+    if gh auth status 2>&1 | grep -q "'workflow'"; then
+      ok "GitHub CLI can push workflow changes"
+    else
+      step -i "Let gh push workflow changes" gh auth refresh -h github.com -s workflow
+    fi
+    step "git uses gh for GitHub over HTTPS, never a stale keychain token" gh auth setup-git -h github.com
   fi
   if [ -n "$GH_USER" ] && [ -f "$HOME/.ssh/github.pub" ]; then
     KEY_BODY=$(awk '{ print $2 }' "$HOME/.ssh/github.pub")
