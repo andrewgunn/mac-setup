@@ -39,6 +39,7 @@ brew 'shellcheck'
 #brew 'ta-lib'
 # nvim-treesitter needs the tree-sitter CLI; from Homebrew it stays updated
 # with everything else, instead of Neovim's mason installing a second copy.
+brew 'terminal-notifier'
 brew 'tree-sitter-cli'
 brew 'weasyprint'
 brew 'zoxide'
